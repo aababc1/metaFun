@@ -1,0 +1,235 @@
+library(ComplexHeatmap)
+library(circlize)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(RColorBrewer)
+library(circlize)
+library(InteractiveComplexHeatmap)
+
+
+#  parse command line arguments
+args <- commandArgs(trailingOnly = TRUE)
+
+
+if (length(args) == 0) {
+# Handle the case where no arguments are passed
+#    Set default values or exit with a message
+    cat("No arguments provided. Exiting script.\n -i : KO.csv matrix, -m metadata.csv -out_html shinyout -out_table module_table.tsv,  \n -mc : module completeness - optional  \n -meta_cols : column number like 2,3,4   ")
+    quit(save = "no", status = 1)
+    }
+
+arg_list <- list()
+for (i in seq(1, length(args), 2)) {
+  arg_list[[args[i]]] <- args[i + 1]
+}
+
+# Assign arguments to variables
+input_kegg_matrix <- arg_list[["-i"]]
+# metadata <- arg_list[["-m"]]
+output_html <- arg_list[["-out_html"]]
+output_table <- arg_list[["-out_table"]]
+metadata_file <- arg_list[["-m"]]
+
+meta_col_selected <- arg_list[["-n"]]
+meta_col_selected <- as.integer(meta_col_selected)
+meta_cols <- NULL
+
+
+#metadata_provided <- "-m" %in% names(arg_list)
+#metadata <- NULL
+#meta_cols <- NULL
+# if ("-meta_cols" %in% names(arg_list)) {
+#     meta_cols <- unlist(strsplit(arg_list[["-meta_cols"]], ","))
+# }
+metadata <- read.csv(metadata_file, header = TRUE, check.names = FALSE)
+# default KEGG module threshold is 50%. 
+module_completeness_threshold <- 0.5
+
+selected_colname = colnames(metadata)[meta_col_selected]
+
+if ("-mc" %in% names(arg_list)) {
+  mc_value <- as.numeric(arg_list[["-mc"]])
+  if (!is.na(mc_value) && mc_value >= 0 && mc_value <= 1) {
+    module_completeness_threshold <- mc_value
+  } else {
+    warning("Invalid module completeness threshold provided. Using default value of 0.5 that is 50%.")
+  }
+}
+
+library(ggkegg)
+library(ggfx)
+library(tidygraph)
+library(dplyr)
+library(tidyr)
+library(parallel)
+
+# Read the input files
+
+KOtable <- read.csv(input_kegg_matrix, header = TRUE,check.names =FALSE)
+KOtable <- KOtable[,-1]
+
+#metadata <- read.csv(metadata, sep = '\t', header = TRUE)
+#metadata <- metadata[,-1]
+
+# if (metadata_provided) {
+#     metadata <- read.csv(arg_list[["-m"]], sep = '\t', header = TRUE)
+#     if (!is.null(meta_cols) && length(meta_cols) >0 ) {
+#         meta_cols <- as.numeric(meta_cols)
+#         meta_cols <- meta_cols[meta_cols <= ncol(metadata)]
+#         meta_selected <- metadata[, meta_cols, drop = FALSE]
+#     } 
+#     rownames(meta_selected) <- metadata[,"Name"]
+# }    
+
+
+
+
+ko_long_format <-  KOtable %>%
+  pivot_longer(cols = everything(), names_to = "Genome", values_to = "KOs")
+unique(ko_long_format$Genome)
+
+#mapper <- data.table::fread("https://rest.kegg.jp/link/ko/module", header=FALSE)
+#data.table::fwrite(mapper, "mapper.tsv", col.names = TRUE)
+mapper <- data.table::fread("/scratch/tools/microbiome_analysis/database/kofam/mapper.tsv", header=TRUE)
+allmods <-  gsub("md:", "", mapper$V1) %>%  unique()
+
+
+# modules downloaded in 2023 Dec 20 
+mf <-  list.files("/scratch/tools/microbiome_analysis/database/KEGG_modules")
+mf <- mf[startsWith(mf, "M")]
+annos <- list()
+
+library(parallel)
+cl <-  makeCluster(32)
+clusterEvalQ(cl, {
+  library(ggkegg)
+  library(ggfx)
+  library(tidygraph)
+  library(dplyr)
+  library(tidyr)
+})
+calculate_completeness <-  function(genome) {
+  kos <- KOtable[[genome]][!is.na(KOtable[[genome]])]
+  mcs <- sapply(mf, function(mod) {
+    mc <- module_completeness(module(mod, directory="/scratch/tools/microbiome_analysis/database/KEGG_modules/"), 
+                              query = kos)
+    mean(mc$complete)
+  })
+  names(mcs) <- mf
+  return(mcs)
+}
+clusterExport(cl, c("KOtable", "mf", "calculate_completeness")) 
+results <- parLapply(cl, colnames(KOtable), calculate_completeness)
+names(results) <- colnames(KOtable)
+stopCluster(cl)
+
+hdf <- data.frame(results,check.names=FALSE)
+
+# for (genome in colnames(KOtable)) {
+#   # get KOs in one genome 
+#   kos <- KOtable[[genome]]
+#   kos <- kos[!is.na(kos)]
+
+#   mcs <-  NULL
+#   for (mod in mf) {
+#     mc <- module_completeness(module(mod, directory="/scratch/tools/microbiome_analysis/database/KEGG_modules"),
+#                               query = kos)
+#     mcs <-c(mcs, mc$complete |> mean())
+#   }
+#   annos[[as.character(genome)]] <- mcs 
+# }
+#hdf <- data.frame(annos, check.names=FALSE)
+
+row.names(hdf) <- mf
+hdf[is.na(hdf)] <- 0
+threshold <- 0.5
+hdf <- hdf[apply(hdf, 1, function(x) any(x >= module_completeness_threshold)), ]
+
+# module description and CLASS description third columns are most bigger concept 
+#moddesc <- data.table::fread("https://rest.kegg.jp/list/module", header=FALSE)
+#data.table::fwrite(module_desc,"module_desc.txt",col.names=TRUE)
+moddesc<- data.table::fread("/scratch/tools/microbiome_analysis/database/kofam/module_desc.txt", header=FALSE)
+
+mod_class <- read.csv("/scratch/tools/microbiome_analysis/database/KEGG_modules/modes_class_description.tsv",
+         sep='\t',header=FALSE)
+merged_modedesc <- merge(moddesc, mod_class, by="V1")
+
+library(ragg)
+library(ComplexHeatmap)
+library(circlize)
+library(InteractiveComplexHeatmap)
+rownames(hdf)
+
+#generate ordered module table following CLASS
+merged_modedesc <- merged_modedesc %>%
+  arrange(V2.y, V3, V2.x)
+module_order <- merged_modedesc$V1[merged_modedesc$V1 %in% rownames(hdf)]
+hdf <- hdf[module_order, ]
+annotation_reordered_modedesc <- merged_modedesc %>%
+  filter(V1 %in% rownames(hdf)) %>%
+  select( V3, V2.y)
+names(annotation_reordered_modedesc) <- c("Pathway Category", "Pathway Class")
+ha_module <- rowAnnotation(df = annotation_reordered_modedesc)
+
+# metadata 
+# if (!is.null(metadata)) {
+#     meta_selected <- metadata %>%  
+#       select(country,continent, disease_group, age_group)
+#     rownames(meta_selected) <- metadata[,"Name"]
+
+#     meta_selected <- meta_selected[rownames(meta_selected)%in% colnames(hdf),]
+#     meta_selected_ordered <- meta_selected[match(colnames(hdf), rownames(meta_selected)), ]
+
+#     ha_meta <-  HeatmapAnnotation(df = meta_selected_ordered) 
+# } else { 
+#     ha_meta <- NULL 
+# } 
+#metadata parsing
+rownames(metadata) <- metadata[,1]
+selected_columns <- c("Completeness", "Contamination", "classification", colnames(metadata[selected_colname]))
+meta_filtered_forvis <- metadata[, selected_columns]
+head(meta_filtered_forvis)
+meta_filtered_forvis <- meta_filtered_forvis %>%
+  mutate(!!selected_colname := replace(.[[selected_colname]], .[[selected_colname]] == "", "NA"))
+
+classification_split <- strsplit(as.character(meta_filtered_forvis$classification), ";")
+classification_df <- do.call(rbind, classification_split)
+colnames(classification_df) <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+classification_df <- as.data.frame(classification_df)
+meta_filtered_forvis <- cbind(meta_filtered_forvis[, -which(colnames(meta_filtered_forvis) == "classification")], classification_df)
+meta_filtered_forvis_ordered <- meta_filtered_forvis[match(colnames(hdf), rownames(meta_filtered_forvis)),]
+
+top_annotation <- HeatmapAnnotation(df = meta_filtered_forvis_ordered,
+                                    annotation_name_gp = gpar(fontsize = 7)) 
+# drawing part 
+
+col_fun <- colorRamp2(c(0, module_completeness_threshold -0.0000001 ,module_completeness_threshold, 1), c("black","black", "white", scales::muted("red")))
+head(hdf)
+
+
+ht1 <- Heatmap(as.matrix(hdf), show_column_names = FALSE,
+               col = col_fun,
+               right_annotation = ha_module,
+               top_annotation = top_annotation,
+               show_column_dend = FALSE,
+               #cluster_rows = FALSE,
+               heatmap_legend_param = list(
+                 legend_direction = "horizontal" ) , 
+                 name = "Module completeness", border = TRUE,
+                 column_split  = meta_filtered_forvis_ordered[,selected_colname]
+                 )
+ht1 <- draw(ht1)
+
+output_file <- "heatmap_KEGG.pdf"
+pdf(file = output_file, width = 20, height = 15)
+draw(ht1)
+dev.off()
+
+# Save the interactive plot
+
+htShiny(ht1, output_ui_float = TRUE, save = output_html)
+
+# Save the module completeness table
+write.csv(hdf, file = output_table)

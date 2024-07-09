@@ -1,0 +1,207 @@
+library("phyloseq"); packageVersion("phyloseq")
+library(dplyr)
+library(ggplot2)  # 3.4.4
+library(vegan) # 2.6.4
+library("foreach"); packageVersion("foreach") #1.5.2
+library("doParallel"); packageVersion("doParallel") # 1.0.17
+library(ggpubr)
+
+args <- commandArgs(trailingOnly = TRUE)
+
+
+parse_arg <- function(arg_name, default_value, is_numeric = TRUE) {
+  arg_index <- which(args == arg_name)
+  if (length(arg_index) > 0 && arg_index + 1 <= length(args)) {
+    value <- args[arg_index + 1]
+    if(is_numeric) {
+      return(as.numeric(value))
+    }
+    return(value)
+  } else {
+    return(default_value)
+  }
+}
+
+# Mandatory arguments
+phyloseq_object_path <- parse_arg("-i", NULL, is_numeric = FALSE)
+metadata_column <- parse_arg("-m", NULL)
+
+if (is.null(phyloseq_object_path) || is.null(metadata_column)) {
+  stop("Insufficient arguments: -i [phyloseq object file path] and -m [column number in phyloseq metadata] are required.")
+}
+
+
+ps_object <- readRDS(phyloseq_object_path)
+metadata_column <- as.integer(metadata_column)
+
+# Mandatory arguments
+#if (length(args) < 2) {
+#  stop("Insufficient arguments: -i [phylosseq object file path] and -m [column number in phyloseq metadata ] are required.")
+#}
+#mandatory 
+
+
+#ps_object_path <- args[1] # Assuming ps_object is a file path to be loaded
+#metadata_column <- as.integer(args[2])
+#ps_object <- readRDS(ps_object_path)
+
+# optional
+prevalence_threshold <- parse_arg("--prevalence", 0.05) # 5% prevalence is used to filter out taxa.
+abundance_threshold <- parse_arg("--abundance", 0.0001) # 
+desired_width <- parse_arg("--width", 800)
+desired_height <- parse_arg("--height", 600)
+
+# save --> load : phyloseq : should know the name 
+# saveRDS --> loadRDS : phyloseq
+
+
+
+library(plotly)
+phyloseq_filter_diversity <- function(  ps_object, 
+                                        metadata_column, 
+                                        prevalence_threshold, 
+                                        abundance_threshold, 
+                                        desired_width, 
+                                        desired_height) {
+  # Filter taxa based on prevalence and relative abundance 
+  # Convert all taxa to zero that did not pass abundance threshold 
+  group_variable_index <- as.integer(metadata_column)
+  
+  desired_width <- 800
+  desired_height <- 600
+  
+  if (!is.integer(group_variable_index)) {
+    stop("group_variable_index must be an integer")
+  }
+  sample_df <- data.frame(sample_data(ps_object))
+  group_variable <- names(sample_df)[group_variable_index]
+  
+  otu_mat <- otu_table(ps_object)
+  otu_mat[otu_mat < abundance_threshold] <- 0
+  otu_table(ps_object) <- otu_mat
+  
+  # filter OTUs that prevalence < 5%
+  otu_prevalence <- apply(otu_mat, 1, function(x) sum(x > 0) / nsamples(ps_object))
+  otus_to_keep <- names(otu_prevalence[otu_prevalence >= prevalence_threshold])
+  # keep taxa with prune_taxa  
+  ps_object <- prune_taxa(otus_to_keep, ps_object)
+  print("Taxonomy filtering was filtering done")
+    
+  # Calculate alpha diversity 
+  # data is relative abundance. Shannon, Simpson  would be suitable . Chao1,Fisher are not suitable for relab. 
+  print("Alpha diversity calculation")
+  alpha_diversity <- estimate_richness(ps_object,split = TRUE, c("Shannon", "Simpson"))
+  sample_df <- data.frame(sample_data(ps_object))
+  alpha_diversity_df <- data.frame(sample_data(ps_object), alpha_diversity)
+  print("Alpha diversity calculation")
+  
+  # alpha diversity visualization
+  alpha_plots <- lapply(c("Shannon", "Simpson"), function(div_index) {
+  alpha_plot <- ggplot(alpha_diversity_df, aes(x = !!sym(group_variable), y = .data[[div_index]])) +
+      geom_boxplot() +
+      stat_compare_means( method = "kruskal.test") +
+      theme_bw() +
+      labs(x = as.character(group_variable), y = paste("Diversity : ", div_index), title = paste("Alpha Diversity:", div_index))
+    
+    alpha_plotly <- ggplotly(alpha_plot,width = desired_width, height = desired_height)
+    return(alpha_plotly)
+  })
+  print("Alpha diversity calculation was done ")
+
+  
+  print("Beta diversity calculation was done ")
+  beta_div_measures <- list("bray", "jaccard", "jsd")
+  ##### beta_div
+  beta_div_results <- lapply(beta_div_measures, function(method) {
+    distance_matrix <- phyloseq::distance(ps_object, method = method)
+    pcoa_results <- ordinate(ps_object, method = "PCoA", distance = distance_matrix)
+    # Run PERMANOVA
+    sample_df <- data.frame(sample_data(ps_object))
+    
+
+    print("Running Permanova ")
+
+    sample_df <- data.frame(sample_data(ps_object))
+
+    formula <- as.formula(paste("distance_matrix ~ ", as.character(group_variable)))
+    print(formula)
+    adonis_result <- adonis2(formula, 
+                             data= sample_df,permutations = 999)
+    #print(adonis_result)
+    print("Permanova was done")
+    
+    # Create PCoA plot
+    pcoa_plot <- plot_ordination(ps_object, pcoa_results, color = group_variable) + 
+      geom_point() + 
+      theme_minimal() +
+      labs(x = paste("PCoA 1 (", method, ")"), y = "PCoA 2", title = paste(method, "PCoA"))
+    
+    # Add PERMANOVA results to the plot
+    
+
+    pcoa_plotly <- ggplotly(pcoa_plot,width = desired_width, height = desired_height) %>% 
+      add_annotations(
+        text = sprintf("R2 = %.3f, p= %.4f", adonis_result$R2[[1]], adonis_result$`Pr(>F)`[[1]]),
+        x = 0.5, # You may need to adjust this position
+        y = 1.05, # You may need to adjust this position
+        xref = 'paper',
+        yref = 'paper',
+        showarrow = FALSE,
+        font = list(size = 14, color = "blue"),
+        align = "center",
+        valign = "top"
+      )    
+    list(distance_matrix = distance_matrix, pcoa_results = pcoa_results, pcoa_plot = pcoa_plotly, adonis_result = adonis_result)
+  })
+  print("Beta diversity calculation was done ")
+  
+  results <- list(
+    alpha_diversity = alpha_diversity,
+    alpha_plots = alpha_plots,
+    beta_diversity = beta_div_results
+  )
+  
+  return(results)
+}
+
+
+
+# function call 
+results <- phyloseq_filter_diversity(
+    ps_object,
+    metadata_column,
+    prevalence_threshold,
+    abundance_threshold,
+    desired_width,
+    desired_height
+)
+
+
+output_dir <- "./phyloseq_diversity"
+
+# Create the directory if it doesn't exist
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# Save data tables (if your function returns any)
+if ("alpha_diversity" %in% names(results)) {
+  write.csv(results$alpha_diversity, file = file.path(output_dir, "alpha_diversity.csv"), row.names = FALSE)
+}
+
+# Save Plotly figures as HTML
+if ("alpha_plots" %in% names(results)) {
+  lapply(seq_along(results$alpha_plots), function(i) {
+    plot_name <- paste("alpha_plot", i, ".html", sep = "")
+    htmlwidgets::saveWidget(results$alpha_plots[[i]], file = file.path(output_dir, plot_name))
+  })
+}
+
+if ("beta_diversity" %in% names(results) && "pcoa_plot" %in% names(results$beta_diversity[[1]])) {
+  lapply(seq_along(results$beta_diversity), function(i) {
+    plot_name <- paste("beta_diversity_plot", i, ".html", sep = "")
+    htmlwidgets::saveWidget(results$beta_diversity[[i]]$pcoa_plot, file = file.path(output_dir, plot_name))
+  })
+}
+
+
