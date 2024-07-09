@@ -1,0 +1,581 @@
+Jun-28 11:22:46.591 [main] DEBUG nextflow.cli.Launcher - $> nextflow run nf_scripts/RAWREAD_QC_apptainer.nf --inputDir /data2/leehg/OMD3/PRJNA447983_CRCControl/test20/
+Jun-28 11:22:46.695 [main] DEBUG nextflow.cli.CmdRun - N E X T F L O W  ~  version 24.04.1
+Jun-28 11:22:46.752 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; embedded=false; plugins-dir=/home/leehg/.nextflow/plugins; core-plugins: nf-amazon@2.5.2,nf-azure@1.6.0,nf-cloudcache@0.4.1,nf-codecommit@0.2.0,nf-console@1.1.3,nf-ga4gh@1.3.0,nf-google@1.13.2,nf-tower@1.9.1,nf-wave@1.4.2
+Jun-28 11:22:46.825 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+Jun-28 11:22:46.826 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+Jun-28 11:22:46.829 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.10.0 in 'deployment' mode
+Jun-28 11:22:46.840 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+Jun-28 11:22:46.860 [main] DEBUG nextflow.config.ConfigBuilder - Found config local: /data2/leehg/OMD3/metafun/metaFun/nextflow.config
+Jun-28 11:22:46.862 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /data2/leehg/OMD3/metafun/metaFun/nextflow.config
+Jun-28 11:22:46.886 [main] DEBUG n.secret.LocalSecretsProvider - Secrets store: /home/leehg/.nextflow/secrets/store.json
+Jun-28 11:22:46.889 [main] DEBUG nextflow.secret.SecretsLoader - Discovered secrets providers: [nextflow.secret.LocalSecretsProvider@5d05ef57] - activable => nextflow.secret.LocalSecretsProvider@5d05ef57
+Jun-28 11:22:46.900 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `standard`
+Jun-28 11:22:47.350 [main] DEBUG nextflow.cli.CmdRun - Applied DSL=2 from script declaration
+Jun-28 11:22:47.370 [main] DEBUG nextflow.cli.CmdRun - Launching `nf_scripts/RAWREAD_QC_apptainer.nf` [golden_wright] DSL2 - revision: ac4c6e265f
+Jun-28 11:22:47.372 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins default=[]
+Jun-28 11:22:47.373 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins resolved requirement=[]
+Jun-28 11:22:47.425 [main] DEBUG nextflow.Session - Session UUID: ff204a02-0973-4a87-ae7e-bd0dc38ad36d
+Jun-28 11:22:47.425 [main] DEBUG nextflow.Session - Run name: golden_wright
+Jun-28 11:22:47.425 [main] DEBUG nextflow.Session - Executor pool size: 80
+Jun-28 11:22:47.432 [main] DEBUG nextflow.file.FilePorter - File porter settings maxRetries=3; maxTransfers=50; pollTimeout=null
+Jun-28 11:22:47.457 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 24.04.1 build 5913
+  Created: 20-05-2024 09:48 UTC (18:48 KDT)
+  System: Linux 3.10.0-1160.el7.x86_64
+  Runtime: Groovy 4.0.21 on OpenJDK 64-Bit Server VM 21-internal-adhoc.conda.src
+  Encoding: UTF-8 (UTF-8)
+  Process: 12130@gem4 [165.132.36.51]
+  CPUs: 80 - Mem: 2 TB (534.3 GB) - Swap: 32 GB (9.2 GB) - Virtual threads ON
+Jun-28 11:22:47.522 [main] DEBUG nextflow.Session - Work-dir: /data2/leehg/OMD3/metafun/metaFun/work [xfs]
+Jun-28 11:22:47.522 [main] DEBUG nextflow.Session - Script base path does not exist or is not a directory: /data2/leehg/OMD3/metafun/metaFun/nf_scripts/bin
+Jun-28 11:22:47.531 [main] DEBUG nextflow.executor.ExecutorFactory - Extension executors providers=[]
+Jun-28 11:22:47.542 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Jun-28 11:22:47.565 [main] DEBUG nextflow.cache.CacheFactory - Using Nextflow cache factory: nextflow.cache.DefaultCacheFactory
+Jun-28 11:22:47.577 [main] DEBUG nextflow.util.CustomPoolFactory - Creating virtual thread pool
+Jun-28 11:22:47.727 [main] DEBUG nextflow.Session - Session start
+Jun-28 11:22:48.267 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Jun-28 11:22:48.299 [main] INFO  nextflow.Nextflow - Quality contorl of raw reads of whole metagenome sequencing data. 
+===================================
+output_directory : /data2/leehg/OMD3/metafun/metaFun/results/metagenome/RAWREAD_QC
+
+human_index : /opt/database/host_genome/GRCh38/GRCh38_p12.dna.primary_assembly.fa
+
+used_index  : /opt/database/host_genome/human/human
+
+filter      : human
+
+            If you want to use other index , specify it with --filter $value in command line 
+            You need to index genomes with in specific folder 
+            nextflow.extension.OpCall@6009cd34 is the prefix name of your gneome index. 
+            Index files should be in the database/host_genome subdirectory 
+            $ mkdir /database/host_genome/${filter} 
+            $ bowtie2-build $your_genome database/${filter}/${filter}  
+
+inputDir    : /data2/leehg/OMD3/PRJNA447983_CRCControl/test20/
+outdir      : /data2/leehg/OMD3/metafun/metaFun/results/metagenome/RAWREAD_QC
+
+Jun-28 11:22:48.436 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-28 11:22:48.437 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-28 11:22:48.442 [main] DEBUG nextflow.executor.Executor - [warm up] executor > local
+Jun-28 11:22:48.449 [main] DEBUG n.processor.LocalPollingMonitor - Creating local task monitor for executor 'local' > cpus=80; memory=2 TB; capacity=80; pollInterval=100ms; dumpInterval=5m
+Jun-28 11:22:48.452 [main] DEBUG n.processor.TaskPollingMonitor - >>> barrier register (monitor: local)
+Jun-28 11:22:48.510 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-28 11:22:48.510 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-28 11:22:48.520 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-28 11:22:48.520 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-28 11:22:48.526 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-28 11:22:48.527 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-28 11:22:48.549 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jun-28 11:22:48.549 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jun-28 11:22:48.553 [main] DEBUG nextflow.Session - Workflow process names [dsl2]: humanread_filter, fastqc_raw, fastqc_filtered, multiQC, fastp
+Jun-28 11:22:48.555 [main] DEBUG nextflow.Session - Igniting dataflow network (7)
+Jun-28 11:22:48.560 [PathVisitor-1] DEBUG nextflow.file.PathVisitor - files for syntax: glob; folder: /data2/leehg/OMD3/PRJNA447983_CRCControl/test20/; pattern: *{1,2}.{fastq,fq}{.gz,}; options: [checkIfExists:true]
+Jun-28 11:22:48.561 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > fastqc_raw
+Jun-28 11:22:48.561 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > fastp
+Jun-28 11:22:48.561 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > humanread_filter
+Jun-28 11:22:48.561 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > fastqc_filtered
+Jun-28 11:22:48.562 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > multiQC
+Jun-28 11:22:48.562 [main] DEBUG nextflow.script.ScriptRunner - Parsed script files:
+  Script_a8c05548fea7f7b8: /data2/leehg/OMD3/metafun/metaFun/nf_scripts/RAWREAD_QC_apptainer.nf
+Jun-28 11:22:48.562 [main] DEBUG nextflow.script.ScriptRunner - > Awaiting termination 
+Jun-28 11:22:48.562 [main] DEBUG nextflow.Session - Session await
+Jun-28 11:22:48.730 [Actor Thread 113] INFO  nextflow.container.SingularityCache - Pulling Apptainer image docker://quay.io/aababc1/metafun [cache /data2/leehg/OMD3/metafun/metaFun/nf_scripts/apptainer/quay.io-aababc1-metafun.img]
+Jun-28 11:22:52.617 [Actor Thread 69] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (10); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.617 [Actor Thread 76] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (11); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.619 [Actor Thread 56] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (6); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.620 [Actor Thread 25] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw; work-dir=null
+  error [java.lang.InterruptedException]: java.lang.InterruptedException
+Jun-28 11:22:52.621 [Actor Thread 64] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (8); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.621 [Actor Thread 90] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (15); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.622 [Actor Thread 84] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (13); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.622 [Actor Thread 101] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (18); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.622 [Actor Thread 52] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (5); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.623 [Actor Thread 105] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (19); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.623 [Actor Thread 87] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (14); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.623 [Actor Thread 110] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (20); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.623 [Actor Thread 43] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (3); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.624 [Actor Thread 68] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (9); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.624 [Actor Thread 80] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (12); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.624 [Actor Thread 97] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (17); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.625 [Actor Thread 72] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (10); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.626 [Actor Thread 94] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (16); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.626 [Actor Thread 48] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (4); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.626 [Actor Thread 60] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (7); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.627 [Actor Thread 35] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (1); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.627 [Actor Thread 39] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastqc_raw (2); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.635 [Actor Thread 69] ERROR nextflow.processor.TaskProcessor - Error executing process > 'fastp (10)'
+
+Caused by:
+  Failed to pull singularity image
+    command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+    status : 255
+    hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+    message:
+      FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+
+java.lang.IllegalStateException: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+	at nextflow.container.SingularityCache.getCachePathFor(SingularityCache.groovy:356)
+	at nextflow.container.ContainerHandler.createApptainerCache(ContainerHandler.groovy:110)
+	at nextflow.container.ContainerHandler.normalizeImageName(ContainerHandler.groovy:87)
+	at nextflow.container.resolver.DefaultContainerResolver.resolveImage0(DefaultContainerResolver.groovy:49)
+	at nextflow.container.resolver.DefaultContainerResolver.resolveImage(DefaultContainerResolver.groovy:42)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:321)
+	at nextflow.processor.TaskRun.containerInfo0(TaskRun.groovy:685)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:343)
+	at groovy.lang.MetaMethod.doMethodInvoke(MetaMethod.java:328)
+	at groovy.lang.MetaClassImpl.doInvokeMethod(MetaClassImpl.java:1333)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1088)
+	at org.codehaus.groovy.runtime.ScriptBytecodeAdapter.invokeMethodOnCurrentN(ScriptBytecodeAdapter.java:96)
+	at nextflow.processor.TaskRun.this$dist$invoke$1(TaskRun.groovy)
+	at nextflow.processor.TaskRun$4.methodMissing(TaskRun.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:343)
+	at groovy.lang.MetaClassImpl.invokeMissingMethod(MetaClassImpl.java:924)
+	at groovy.lang.MetaClassImpl.invokePropertyOrMissing(MetaClassImpl.java:1413)
+	at groovy.lang.MetaClassImpl.doInvokeMethod(MetaClassImpl.java:1335)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1088)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1007)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:321)
+	at nextflow.processor.TaskRun$4.apply(TaskRun.groovy:670)
+	at nextflow.processor.TaskRun$4.apply(TaskRun.groovy)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:321)
+	at nextflow.processor.TaskRun.containerInfo(TaskRun.groovy:667)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:321)
+	at nextflow.processor.TaskRun.getContainer(TaskRun.groovy:693)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:321)
+	at nextflow.processor.TaskRun.isContainerEnabled(TaskRun.groovy:738)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:321)
+	at nextflow.processor.TaskProcessor.createTaskHashKey(TaskProcessor.groovy:2193)
+	at org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(IndyInterface.java:321)
+	at nextflow.processor.TaskProcessor.invokeTask(TaskProcessor.groovy:659)
+	at nextflow.processor.InvokeTaskAdapter.call(InvokeTaskAdapter.groovy:52)
+	at groovyx.gpars.dataflow.operator.DataflowOperatorActor.startTask(DataflowOperatorActor.java:120)
+	at groovyx.gpars.dataflow.operator.ForkingDataflowOperatorActor.access$001(ForkingDataflowOperatorActor.java:35)
+	at groovyx.gpars.dataflow.operator.ForkingDataflowOperatorActor$1.run(ForkingDataflowOperatorActor.java:58)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:314)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+	at nextflow.container.SingularityCache.runCommand(SingularityCache.groovy:308)
+	at nextflow.container.SingularityCache.downloadContainerImage0(SingularityCache.groovy:275)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:343)
+	at groovy.lang.MetaMethod.doMethodInvoke(MetaMethod.java:328)
+	at groovy.lang.MetaClassImpl.doInvokeMethod(MetaClassImpl.java:1333)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1088)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1007)
+	at org.codehaus.groovy.runtime.InvokerHelper.invokePogoMethod(InvokerHelper.java:645)
+	at org.codehaus.groovy.runtime.InvokerHelper.invokeMethod(InvokerHelper.java:628)
+	at org.codehaus.groovy.runtime.InvokerHelper.invokeMethodSafe(InvokerHelper.java:82)
+	at nextflow.container.SingularityCache$_downloadContainerImage_closure1.doCall(SingularityCache.groovy:243)
+	at nextflow.container.SingularityCache$_downloadContainerImage_closure1.call(SingularityCache.groovy)
+	at nextflow.file.FileMutex.lock(FileMutex.groovy:106)
+	at nextflow.container.SingularityCache.downloadContainerImage(SingularityCache.groovy:243)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:343)
+	at groovy.lang.MetaMethod.doMethodInvoke(MetaMethod.java:328)
+	at groovy.lang.MetaClassImpl.doInvokeMethod(MetaClassImpl.java:1333)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1088)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1007)
+	at org.codehaus.groovy.runtime.InvokerHelper.invokePogoMethod(InvokerHelper.java:645)
+	at org.codehaus.groovy.runtime.InvokerHelper.invokeMethod(InvokerHelper.java:628)
+	at org.codehaus.groovy.runtime.InvokerHelper.invokeMethodSafe(InvokerHelper.java:82)
+	at nextflow.container.SingularityCache$_getLazyImagePath_closure2.doCall(SingularityCache.groovy:333)
+	at nextflow.container.SingularityCache$_getLazyImagePath_closure2.call(SingularityCache.groovy)
+	at groovyx.gpars.dataflow.LazyDataflowVariable$1.run(LazyDataflowVariable.java:70)
+	... 2 common frames omitted
+Jun-28 11:22:52.640 [Actor Thread 69] DEBUG nextflow.Session - Session aborted -- Cause: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.650 [Actor Thread 69] DEBUG nextflow.Session - The following nodes are still active:
+[process] fastp
+  status=ACTIVE
+  port 0: (queue) closed; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] humanread_filter
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] fastqc_filtered
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] multiQC
+  status=ACTIVE
+  port 0: (value) OPEN  ; channel: reports
+  port 1: (cntrl) -     ; channel: $
+
+Jun-28 11:22:52.652 [main] DEBUG nextflow.Session - Session await > all processes finished
+Jun-28 11:22:52.652 [main] DEBUG nextflow.Session - Session await > all barriers passed
+Jun-28 11:22:52.653 [Task monitor] DEBUG n.processor.TaskPollingMonitor - <<< barrier arrives (monitor: local) - terminating tasks monitor poll loop
+Jun-28 11:22:52.653 [Actor Thread 24] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp; work-dir=null
+  error [java.lang.InterruptedException]: java.lang.InterruptedException
+Jun-28 11:22:52.654 [Actor Thread 102] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (18); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.654 [Actor Thread 34] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (1); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.655 [Actor Thread 77] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (12); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.655 [Actor Thread 85] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (14); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.655 [Actor Thread 81] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (13); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.655 [Actor Thread 89] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (15); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.656 [Actor Thread 93] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (16); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.656 [Actor Thread 42] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (3); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.656 [Actor Thread 53] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (6); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.657 [Actor Thread 65] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (9); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.657 [Actor Thread 106] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (19); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.657 [Actor Thread 49] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (5); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.657 [main] DEBUG n.trace.WorkflowStatsObserver - Workflow completed > WorkflowStats[succeededCount=0; failedCount=0; ignoredCount=0; cachedCount=0; pendingCount=0; submittedCount=0; runningCount=0; retriesCount=0; abortedCount=0; succeedDuration=0ms; failedDuration=0ms; cachedDuration=0ms;loadCpus=0; loadMemory=0; peakRunning=0; peakCpus=0; peakMemory=0; ]
+Jun-28 11:22:52.657 [Actor Thread 38] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (2); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.658 [Actor Thread 61] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (8); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.658 [Actor Thread 45] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (4); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.658 [Actor Thread 73] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (11); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.658 [Actor Thread 98] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (17); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.659 [Actor Thread 57] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (7); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.659 [Actor Thread 109] DEBUG nextflow.processor.TaskProcessor - Handling unexpected condition for
+  task: name=fastp (20); work-dir=null
+  error [java.lang.IllegalStateException]: java.lang.IllegalStateException: Failed to pull singularity image
+  command: apptainer pull  --name quay.io-aababc1-metafun.img.pulling.1719541368732 docker://quay.io/aababc1/metafun > /dev/null
+  status : 255
+  hint   : Try and increase apptainer.pullTimeout in the config (current is "3h 20m")
+  message:
+    FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://quay.io/aababc1/metafun: reading manifest latest in quay.io/aababc1/metafun: manifest unknown
+
+Jun-28 11:22:52.849 [main] DEBUG nextflow.cache.CacheDB - Closing CacheDB done
+Jun-28 11:22:52.862 [main] DEBUG nextflow.script.ScriptRunner - > Execution complete -- Goodbye

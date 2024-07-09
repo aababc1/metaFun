@@ -1,0 +1,4 @@
+2024-06-28 11:22:47	5.9s	golden_wright	ERR	ac4c6e265f11ff90456eba3d1364ff7a	ff204a02-0973-4a87-ae7e-bd0dc38ad36d	nextflow run nf_scripts/RAWREAD_QC_apptainer.nf --inputDir /data2/leehg/OMD3/PRJNA447983_CRCControl/test20/
+2024-06-28 11:25:02	32m 31s	reverent_lorenz	ERR	ac4c6e265f11ff90456eba3d1364ff7a	cca9fec9-bca5-45d7-b784-d2d69124e218	nextflow run nf_scripts/RAWREAD_QC_apptainer.nf --inputDir /data2/leehg/OMD3/PRJNA447983_CRCControl/test20/
+2024-06-28 12:39:00	7m 34s	cranky_pasteur	ERR	ac4c6e265f11ff90456eba3d1364ff7a	1e479af3-7659-4908-bc78-701da6f4eb16	nextflow run nf_scripts/RAWREAD_QC_apptainer.nf --inputDir /data2/leehg/OMD3/PRJNA447983_CRCControl/test20/
+2024-06-28 13:35:17	8m 48s	compassionate_lalande	ERR	ac4c6e265f11ff90456eba3d1364ff7a	7f22408b-d671-464f-855f-f6ce3fc2e57d	nextflow run nf_scripts/RAWREAD_QC_apptainer.nf --inputDir /data2/leehg/OMD3/PRJNA447983_CRCControl/test20/
