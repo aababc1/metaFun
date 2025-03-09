@@ -1,0 +1,100 @@
+\033[1;38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m
+
+Usage :
+    metafun_test -module COMPARATIVE_ANNOTATION --inputDir "${bins_quality_passed_dir}" --metadata "${metadata_file}" --metacol <column_number>
+
+\033[1;38;2;78;149;217mCOMPARATIVE_ANNOTATION : Functional annotation and comparison of genome bins\033[0m
+=========================================================
+ \033[38;2;78;149;217mKofamScan\033[0m        : KEGG Orthology annotation 
+ \033[38;2;78;149;217mKEGG Mapper\033[0m      : KEGG pathway and module analysis
+ \033[38;2;78;149;217meggNOG-mapper\033[0m    : Orthology assignment and functional annotation
+ \033[38;2;78;149;217mVFDB\033[0m             : Virulence factor identification
+ \033[38;2;78;149;217mCARD (RGI)\033[0m       : Antimicrobial resistance gene annotation
+ \033[38;2;78;149;217mdbCAN\033[0m            : Carbohydrate-Active enZyme annotation
+ \033[38;2;78;149;217mPPanGGOLiN\033[0m       : Pangenome analysis and gene family clustering
+ \033[38;2;78;149;217mskani\033[0m            : Fast ANI calculation for genome comparison
+ \033[38;2;78;149;217mdRep\033[0m             : Genome dereplication (optional)
+
+This module performs comprehensive functional annotation and comparison across high-quality bins.
+
+
+\033[1;31mRequired Parameters:\033[0m 
+------------------
+\033[31m--inputDir\033[0m         : Directory containing high-quality bins
+                     Typically output from ASSEMBLY_BINNING (final_bins)
+\033[31m--metadata\033[0m         : CSV file with additional metadata for samples
+                     Typically output from GENOME_SELECTOR (genome_selector_result.csv)
+                     If you have genome_selector_result.csv, you can skip this parameter.
+
+
+\033[1;33mOptional Parameters:\033[0m 
+------------------
+\033[33m--metacol\033[0m          : Column number in metadata file to use for grouping 
+        \033[31mIf this is not specified, visualization will not work, but you can use the Interactive module.\033[0m
+\033[33m--samplecol\033[0m        : Column index for sample IDs in metadata (default: 1)
+\033[33m--module_completeness\033[0m : KEGG module completeness threshold (default: 0.5)
+\033[33m--kofamscan_eval\033[0m   : E-value threshold for KofamScan (default: 1e-5)
+\033[33m--pan_identity\033[0m     : Identity threshold for PPanGGOLiN (default: 0.8)
+\033[33m--pan_coverage\033[0m     : Coverage threshold for PPanGGOLiN (default: 0.8)
+\033[33m--kingdom\033[0m          : Kingdom for annotation (default: bacteria)
+\033[33m--VFDB_identity\033[0m    : Minimum identity for VFDB hits (default: 50)
+\033[33m--VFDB_coverage\033[0m    : Minimum coverage for VFDB hits (default: 80)
+\033[33m--VFDB_e_value\033[0m     : E-value threshold for VFDB hits (default: 1e-10)
+\033[33m--CAZyme_hmm_eval\033[0m  : E-value threshold for CAZyme HMM search (default: 1e-15)
+\033[33m--CAZyme_hmm_cov\033[0m   : Coverage threshold for CAZyme hits (default: 0.35)
+\033[33m--run_drep\033[0m         : Run dereplication (true or false, default: true)
+\033[33m--drep_ani\033[0m         : ANI threshold for dereplication (default: 0.995, subspecies level clustering)
+\033[33m--drep_cov\033[0m         : Coverage threshold for dereplication (default: 0.3)
+\033[33m--drep_algorithm\033[0m   : Algorithm for ANI calculation (default: skani)
+\033[33m--drep_ignore_quality\033[0m : Ignore genome quality metrics (default: true)
+\033[33m--cpus\033[0m             : Number of CPUs to use (default: 40)
+\033[33m--outdir\033[0m           : Output directory 
+                     (default: ${launch_dir}/results/metagenome/COMPARATIVE_ANNOTATION)
+
+
+\033[1;38;2;0;255;255mOutput File Description:\033[0m
+-----------
+\033[38;2;0;255;255m- annotation_results/\033[0m   : Individual annotation results
+  \033[38;2;0;255;255m- kofamscan/\033[0m         : KEGG orthology annotations
+  \033[38;2;0;255;255m- kegg_modules/\033[0m      : KEGG module completeness
+  \033[38;2;0;255;255m- eggnog/\033[0m            : eggNOG annotation results
+  \033[38;2;0;255;255m- VFDB/\033[0m              : Virulence factor annotations
+  \033[38;2;0;255;255m- CARD/\033[0m              : Antimicrobial resistance gene annotations
+  \033[38;2;0;255;255m- dbCAN/\033[0m             : Carbohydrate-active enzyme annotations
+  \033[38;2;0;255;255m- pangenome/\033[0m         : Pangenome analysis results
+  \033[38;2;0;255;255m- ani/\033[0m               : Genome similarity matrix
+
+\033[31mIf you did not specify --metacol, visualization will not work, but you can use the Interactive module.\033[0m
+\033[31mWe recommend utilize Interactive module\033[0m
+
+\033[38;2;0;255;255m- visualization_results/\033[0m : Comparison visualizations and tables
+  \033[38;2;0;255;255m- module_heatmaps/\033[0m   : KEGG module completeness heatmaps
+  \033[38;2;0;255;255m- gene_presence_absence/\033[0m : Gene presence/absence tables
+  \033[38;2;0;255;255m- summary_figures/\033[0m   : Overview visualizations
+
+
+\033[1;36mDatabase Information:\033[0m
+------------------
+\033[33mKEGG\033[0m               : KofamScan profiles and KEGG Orthology (KO) database
+\033[33meggNOG\033[0m             : eggNOG v5.0 orthologous groups and functional annotations
+\033[33mVFDB\033[0m               : Virulence Factor Database for pathogenic bacteria
+\033[33mCARD\033[0m               : Comprehensive Antibiotic Resistance Database
+\033[33mdbCAN\033[0m              : Database for Carbohydrate-active enzyme ANnotation
+\033[33mPPanGGOLiN\033[0m         : Pangenome analysis tool with partitioning
+
+
+\033[1;36mSelected Parameters:\033[0m
+------------------
+\033[33mInput Directory:\033[0m    %INPUT_DIR%
+\033[33mMetadata File:\033[0m      %METADATA%
+\033[33mMetadata Column:\033[0m    %METACOL%
+\033[33mModule Completeness:\033[0m %MODULE_COMPLETENESS%
+\033[33mRun dRep:\033[0m          %RUN_DREP%
+\033[33mCPUs Used:\033[0m         %CPUS%
+\033[33mOutput Directory:\033[0m  %OUTPUT_DIR%
+
+
+
+\033[38;2;180;180;180mNote:\033[0m This module provides comparative analysis for high-quality bins.
+\033[38;2;180;180;180mResults can be visualized interactively with:\033[0m 
+\033[38;2;255;149;0mINTERACTIVE_COMPARATIVE\033[0m

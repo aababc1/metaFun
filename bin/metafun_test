@@ -1,0 +1,1450 @@
+#!/bin/bash
+
+# =======================================
+# metafun_test - MetaFun Pipeline Runner
+# =======================================
+
+# Base directories setup
+BASE_DIR="$(dirname $(dirname $(which "$0")))/share/metafun_test"
+NF_DIR="${BASE_DIR}/nf_scripts"
+CONFIG_DIR="${BASE_DIR}/config"
+DB_DIR="${BASE_DIR}/db"
+SCRIPTS_DIR="${BASE_DIR}/scripts"
+SIF_DIR="${BASE_DIR}/sif_images"
+FILTER="human"
+CUSTOM_INDEX=""
+
+# Set current working directory
+export LAUNCH_DIR="$(pwd)"
+
+# Error message output function
+# error() {
+#     echo "ERROR: $1" >&2
+#     exit 1
+# }
+error() {
+    echo -e "ERROR: $1" >&2
+    if [ "$2" = "show_modules" ]; then
+        display_module_availability
+    fi
+    exit 1
+}
+
+BOLD="\033[1m"
+ITALIC="\033[3m"
+RESET="\033[0m"
+
+# Usage information
+# usage() {
+#     cat << EOF
+# Usage: $(basename "$0") -module <module_name> [options]
+
+# Modules of metaFun:
+#   RAWREAD_QC            : Quality control of raw reads and host genome filtering
+#     Required: -i <inputDir>
+    
+#   ASSEMBLY_BINNING      : Assembly and binning
+#     Optional: -i <inputDir> -o <outputDir> -p <processors>
+    
+#   BIN_ASSESSMENT       : Assess genome quality and taxonomy classification
+#     Required: -m <metadata> -c <accession_column>
+    
+#   WMS_TAXONOMY         : Taxonomic profiling of quality-controlled metagenomic reads
+#   Required: -i <inputDir> -m <metadata> -s <sampleIDcolumn> --profiler <kraken2|sylph>
+#   Optional: -a <analysiscolumn> -o <outputDir> -p <processors>
+
+#   WMS_FUNCTION         : Functional analysis of quality-controlled metagenomic reads
+#     Required: -i <inputDir> -m <metadata> -s <sampleIDcolumn> -a <analysiscolumn>
+    
+#   COMPARATIVE_ANNOTATION: Comparative genomic analysis and functional annotation of pangenome
+#     Optional: -i <inputDir> -m <metadata> --samplecol <column> --metacol <column> -o <outputDir> -p <processors>
+    
+#   INTERACTIVE_TAXONOMY : Interactive taxonomy analysis session
+#     Optional: -i <inputDir> -o <outputDir> -p <processors>
+    
+#   INTERACTIVE_COMPARATIVE: Interactive comparative analysis session
+#     Optional: -i <inputDir> -o <outputDir> -m <metadata> -p <processors>
+    
+#   DOWNLOAD_DB          : Download required databases
+#     No additional options required
+    
+#   GENOME_SELECTOR      : Genome selection interface
+#     Optional: -i <input_file> (default: combined_medata.csv) -p <port>
+
+#   PREPARE_CUSTOM_HOST    : Prepare custom host genome index for RAWREAD_QC
+#     Required:
+#       -i, --input <file>              : Input genome fasta file
+#       -f, --filter <name>             : Filter name (will be used with --filter in RAWREAD_QC)
+#     Optional:
+#       --threads <int>                 : Number of threads (default: 4)
+
+# Examples:
+#   $(basename "$0") -module RAWREAD_QC -i input_reads/
+#   $(basename "$0") -module BIN_ASSESSMENT -m metadata.txt -c 2
+#   $(basename "$0") -module COMPARATIVE_ANNOTATION -i genomes/ -m metadata.csv --samplecol 1 --metacol 2
+#   $(basename "$0") -module INTERACTIVE_TAXONOMY -i results/metagenome/WMS_TAXONOMY
+# EOF
+# }
+
+module_color() {
+    local color=""
+    case "$1" in
+        "RAWREAD_QC")           color="\033[1;31m";;         # 빨간색
+        "ASSEMBLY_BINNING")     color="\033[1;38;2;255;147;0m";;  # 주황색
+        "BIN_ASSESSMENT")       color="\033[1;32m";;         # 녹색
+        "GENOME_SELECTOR")      color="\033[1;32m";;         # 녹색
+        "COMPARATIVE_ANNOTATION") color="\033[1;34m";;       # 파란색
+        "INTERACTIVE_COMPARATIVE") color="\033[1;34m";;      # 파란색
+        "WMS_TAXONOMY"*)        color="\033[1;38;2;8;70;250m";;   # 진한 파란색
+        "INTERACTIVE_TAXONOMY") color="\033[1;38;2;8;70;250m";;   # 진한 파란색
+        "WMS_FUNCTION")         color="\033[1;35m";;         # 보라색
+        "DOWNLOAD_DB")          color="\033[1m";;         
+        "PREPARE_CUSTOM_HOST")  color="\033[1m";;         
+        *)                     color="\033[0m";;           # 기본색
+    esac
+#    echo -e "${color}"
+        echo -n "${color}"
+
+}
+
+
+
+usage() {
+    #cat << EOF
+
+echo -e "Usage: $(basename "$0") -module module_name  -options"
+echo -e "Use        metafun -module module_name -h/--help         to get help for a specific module"
+echo -e ""
+echo -e ""
+echo -e "${BOLD}  Modules of metaFun:${RESET}"
+echo -e ""
+      echo -e "$(module_color "RAWREAD_QC") RAWREAD_QC ${RESET}: Quality control of raw reads and host genome filtering"
+    echo -e "${BOLD}    Required:${RESET} -i <inputDir>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module RAWREAD_QC -i input_reads/"
+    echo -e " "
+echo -e "$(module_color "PREPARE_CUSTOM_HOST") PREPARE_CUSTOM_HOST ${RESET}: Prepare custom host genome index"
+    echo -e "${BOLD}    Required:${RESET} -i <file> -f <name>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module PREPARE_CUSTOM_HOST -i genome.fasta -f mouse"
+echo -e " "
+echo -e "$(module_color "ASSEMBLY_BINNING") ASSEMBLY_BINNING ${RESET}: Assembly and binning"
+    echo -e "${BOLD}    Required:${RESET} -i <inputDir>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module ASSEMBLY_BINNING -i filtered_reads/ -p 40"
+echo -e " "
+echo -e "$(module_color "BIN_ASSESSMENT") BIN_ASSESSMENT ${RESET}: Assess genome quality and taxonomy classification"
+    echo -e "${BOLD}    Required:${RESET} -m <metadata> -c <accession_column>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module BIN_ASSESSMENT -m metadata.txt -c 2"
+    echo -e " "
+#  echo -e "$(module_color "GENOME_SELECTOR") GENOME_SELECTOR ${RESET}: Genome selection interface"
+    echo -e " \033[32m${BOLD}GENOME_\033[34mSELECTOR${RESET}: Genome selection interface"
+   echo -e "${BOLD}    Required:${RESET} -i <input_file>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module GENOME_SELECTOR -i combined_metadata.csv"
+    echo -e " "
+  echo -e "$(module_color "COMPARATIVE_ANNOTATION") COMPARATIVE_ANNOTATION ${RESET}: Comparative genomic analysis"
+    echo -e "${BOLD}    Required:${RESET} -i <inputDir> -m <metadata>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module COMPARATIVE_ANNOTATION -i genomes/ -m metadata.csv --samplecol 1  : only annotation and preparation for  interactive comparative analysis : recommended"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module COMPARATIVE_ANNOTATION -i genomes/ -m metadata.csv --samplecol 1 --metacol 2 : annotates and generate static plots."
+echo -e " "
+  echo -e "$(module_color "INTERACTIVE_COMPARATIVE") INTERACTIVE_COMPARATIVE ${RESET}: Interactive comparative analysis"
+    echo -e "${BOLD}    Required:${RESET} -i <inputDir> -m <metadata>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module INTERACTIVE_COMPARATIVE -i results/genomes -m metadata.csv"
+        echo -e " "
+  echo -e "$(module_color "WMS_TAXONOMY") WMS_TAXONOMY ${RESET}: Taxonomic profiling of metagenomic reads"
+    echo -e "${BOLD}    Required:${RESET} -i <inputDir> -m <metadata> -s <sampleIDcolumn> --profiler <kraken2|sylph>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module WMS_TAXONOMY -i reads/ -m meta.csv -s 1 --profiler sylph"
+    echo -e " "
+  echo -e "$(module_color "INTERACTIVE_TAXONOMY") INTERACTIVE_TAXONOMY ${RESET}: Interactive taxonomy analysis"
+    echo -e "${BOLD}    Required:${RESET} -i <inputDir>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module INTERACTIVE_TAXONOMY -i results/metagenome/WMS_TAXONOMY"
+    echo -e " "
+  echo -e "$(module_color "WMS_FUNCTION") WMS_FUNCTION ${RESET}: Functional analysis of metagenomic reads"
+    echo -e "${BOLD}    Required:${RESET} -i <inputDir> -m <metadata> -s <sampleIDcolumn> -a <analysiscolumn>"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module WMS_FUNCTION -i filtered_reads/ -m metadata.csv -s 1 -a 2"
+echo -e " "
+  echo -e "$(module_color "DOWNLOAD_DB") DOWNLOAD_DB ${RESET}: Download required databases"
+    echo -e "${ITALIC}    Example:${RESET} metafun_test -module DOWNLOAD_DB"
+    echo -e " "
+  echo -e " "
+echo -e "${BOLD}Common Options:${RESET}"
+    echo -e "  -o, --output     : Output directory"
+    echo -e "  -p, --processors : Number of processors to use"
+    echo -e "  -h, --help       : Show detailed help for a module"
+#EOF
+}
+
+
+
+
+display_module_help() {
+    local module_lower=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+    local help_file="${BASE_DIR}/help/${module_lower}.txt"
+    
+    # 모듈 로고 표시
+    display_module_logo "$1"
+    
+    if [ -f "$help_file" ]; then
+        process_help_placeholders "$1" "$help_file" | while IFS= read -r line; do
+            echo -e "$line"
+        done
+    else
+        echo "No specific help available for module: $1"
+        usage
+    fi
+    exit 0
+}
+
+
+
+# Argument validation function
+validate_args() {
+    local module=$(normalize_module "$1")
+    shift  # Remove the module name from arguments list
+
+    # 특별히 INTERACTIVE_COMPARATIVE 모듈에 대해서는 인수가 하나인 경우에도 도움말을 표시하지 않음
+    if [[ "$module" == "INTERACTIVE_COMPARATIVE" && "$#" -eq 1 && "$HELP_REQUESTED" != "true" ]]; then
+        return
+    fi
+    if [ "$#" -eq 1 ] || [ "$HELP_REQUESTED" = true ]; then
+        display_module_help "$module"
+        return
+    fi
+    
+    case "$module" in
+        RAWREAD_QC)
+
+            NF_ARGS="--inputDir $INPUT_DIR"
+            [ -z "$INPUT_DIR" ] && error "Input directory (-i) required for RAWREAD_QC"
+            [ ! -d "$INPUT_DIR" ] && error "Input directory does not exist: $INPUT_DIR"
+
+            FILTER="${FILTER:-human}"
+            if [ "$FILTER" = "human" ]; then
+                :
+            elif [ "$FILTER" = "none" ]; then
+                :
+            else 
+                if [ ! -d "${DB_DIR}/host_genome/${FILTER}" ]; then
+                    error "Host genome directory not found: ${DB_DIR}/host_genome/${FILTER}"
+                fi
+                if [ ! -f "${DB_DIR}/host_genome/${FILTER}/${FILTER}.1.bt2" ]; then
+                    error "Index files not found for filter: ${FILTER}\nRun: metafun_test -module PREPARE_CUSTOM_HOST -i genome.fasta -f ${FILTER} first"
+                fi
+            fi
+            ;;
+        PREPARE_CUSTOM_HOST)
+            [ -z "$INPUT_GENOME" ] && error "Input genome file (-i/--input) is required"
+            [ ! -f "$INPUT_GENOME" ] && error "Input genome file does not exist: $INPUT_GENOME"
+            [ -z "$FILTER_NAME" ] && error "Filter name (-f/--filter) is required"
+            ;;
+            
+                        
+        BIN_ASSESSMENT)
+            [ -z "$METADATA" ] && error "Metadata file (-m) required for BIN_ASSESSMENT"
+            [ -z "$ACCESSION" ] && error "Accession column (-c) required for BIN_ASSESSMENT"
+            [ ! -f "$METADATA" ] && error "Metadata file does not exist: $METADATA"
+            ;;
+        WMS_TAXONOMY|WMS_FUNCTION)
+            #[ -z "$INPUT_DIR" ] && error "Input directory (-i) required"
+            [ -z "$METADATA" ] && error "Metadata file (-m) required"
+            [ -z "$SAMPLE_ID" ] && error "Sample ID column (-s) required"
+            if [ "$MODULE" = "WMS_TAXONOMY" ]; then
+                if [ -z "$PROFILER" ]; then
+                    echo -e "No profiler specified, using default: \033[1;33msylph\033[0m"
+                    PROFILER="sylph"  # Explicitly set the default
+                else
+                    echo -e "Using profiler: \033[1;33m$PROFILER\033[0m"
+                fi
+            fi
+            #[ ! -d "$INPUT_DIR" ] && error "Input directory does not exist: $INPUT_DIR"
+            [ ! -f "$METADATA" ] && error "Metadata file does not exist: $METADATA"
+            ;;
+    esac
+}
+
+# No arguments provided, show usage
+[ $# -eq 0 ] && { usage; exit 1; }
+
+# Initialize variables
+MODULE=""
+INPUT_DIR=""
+METADATA=""
+ACCESSION=""
+SAMPLE_ID=""
+SAMPLE_COL=""
+ANALYSIS=""
+META_COL=""
+FILE_INPUT=""
+PROCESSORS=""
+OUTPUT_DIR=""
+HELP_REQUESTED=false
+
+# COMPARATIVE_ANNOTATION specific parameters
+MODULE_COMPLETENESS=""
+PAN_IDENTITY=""
+PAN_COVERAGE=""
+KINGDOM=""
+KOFAMSCAN_EVAL=""
+VFDB_IDENTITY=""
+VFDB_COVERAGE=""
+VFDB_E_VALUE=""
+CAZYME_HMM_EVAL=""
+CAZYME_HMM_COV=""
+RUN_DREP=""
+DREP_ANI=""
+DREP_COV=""
+DREP_ALGORITHM=""
+
+# Genome selector specific parameters
+PORT=""
+
+#WMS_TAXONOMY specific parameters 
+PROFILER=""
+
+# case insensitive module name 
+normalize_module() {
+    echo "$1" | tr '[:lower:]' '[:upper:]'
+}
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -module)
+            MODULE=$(normalize_module "$2")
+            shift 2 ;;
+        -h|--help)
+            HELP_REQUESTED=true
+            shift 1 ;;
+        --no-kraken)
+            NO_KRAKEN=true
+            shift
+            ;;            
+        -i|--input|--inputDir)
+        #for PREPARE_CUSTOM_HOST, INPUT_GENOME is required. 
+           if [ "$MODULE" = "PREPARE_CUSTOM_HOST" ]; then
+                INPUT_GENOME="$2"
+            elif [ "$MODULE" = "GENOME_SELECTOR" ]; then
+                FILE_INPUT="$2"                
+            else
+                INPUT_DIR="$2"
+            fi
+            shift 2 ;;
+        -m|--metadata)
+            METADATA="$2"
+            shift 2 ;;
+        -c|--accession_column)
+            ACCESSION="$2"
+            shift 2 ;;
+        -s|--sampleIDcolumn)
+            SAMPLE_ID="$2"
+            shift 2 ;;
+        --samplecol)
+            SAMPLE_COL="$2"
+            shift 2 ;;
+        -a|--analysiscolumn)
+            ANALYSIS="$2"
+            shift 2 ;;
+        --metacol)
+            META_COL="$2"
+            shift 2 ;;
+
+        -p|--processors|--cpus)
+            PROCESSORS="$2"
+            shift 2 ;;
+        -o|--output|--outdir)
+            OUTPUT_DIR="$2"
+            shift 2 ;;
+        -h|--help)
+            usage
+            exit 0 ;;
+#RAWREAC_QC ,  args 
+        -f|--filter)
+            FILTER="$2"    
+            FILTER_NAME="$2"
+            shift 2  ;;
+        --custom_index)
+            CUSTOM_INDEX="$2"
+            shift 2 ;;            
+#ASSEMBLY_BINNING
+        --megahit_presets)
+            MEGAHIT_PRESETS="$2"
+            shift 2 ;;
+        --semibin2_mode)
+            SEMIBIN2_MODE="$2"
+            shift 2 ;;
+
+#COMPARATIVE_ANNOTATION
+        --module_completeness)
+            MODULE_COMPLETENESS="$2"
+            shift 2 ;;
+        --pan_identity)
+            PAN_IDENTITY="$2"
+            shift 2 ;;
+        --pan_coverage)
+            PAN_COVERAGE="$2"
+            shift 2 ;;
+        --kingdom)
+            KINGDOM="$2"
+            shift 2 ;;
+        --kofamscan_eval)
+            KOFAMSCAN_EVAL="$2"
+            shift 2 ;;
+        --VFDB_identity)
+            VFDB_IDENTITY="$2"
+            shift 2 ;;
+        --VFDB_coverage)
+            VFDB_COVERAGE="$2"
+            shift 2 ;;
+        --VFDB_e_value)
+            VFDB_E_VALUE="$2"
+            shift 2 ;;
+        --CAZyme_hmm_eval)
+            CAZYME_HMM_EVAL="$2"
+            shift 2 ;;
+        --CAZyme_hmm_cov)
+            CAZYME_HMM_COV="$2"
+            shift 2 ;;
+        --run_drep)
+            RUN_DREP="$2"
+            shift 2 ;;
+        --drep_ani)
+            DREP_ANI="$2"
+            shift 2 ;;
+        --drep_cov)
+            DREP_COV="$2"
+            shift 2 ;;
+        --drep_algorithm)
+            DREP_ALGORITHM="$2"
+            shift 2 ;;
+# genome selector specific parameters
+        --port)
+            PORT="$2"
+            shift 2 ;;
+#WMS_TAXONOMY specific parameters
+        --profiler)
+            PROFILER="$2"
+            shift 2 ;;
+        *)
+            error "Unknown parameter: $1" ;;
+    esac
+done
+
+
+
+
+
+display_logos() {
+    local module=$(normalize_module "$1")
+    local base_logo="${BASE_DIR}/help/logo.txt"
+    local module_logo=""
+    
+    # Determine logo file for each module
+    case "$module" in
+        "RAWREAD_QC")
+            module_logo="${BASE_DIR}/help/slant_logo_rawread_qc.txt"
+            ;;
+        "ASSEMBLY_BINNING")
+            module_logo="${BASE_DIR}/help/slant_logo_assembly_binning.txt"
+            ;;
+        "BIN_ASSESSMENT")
+            module_logo="${BASE_DIR}/help/slant_logo_bin_assessment.txt"
+            ;;
+        "WMS_TAXONOMY")
+            module_logo="${BASE_DIR}/help/slant_logo_wms_taxonomy.txt"
+            ;;
+        "WMS_FUNCTION")
+            module_logo="${BASE_DIR}/help/slant_logo_wms_function.txt"
+            ;;
+        "COMPARATIVE_ANNOTATION")
+            module_logo="${BASE_DIR}/help/slant_logo_comparative_annotation.txt"
+            ;;
+        "INTERACTIVE_TAXONOMY")
+            module_logo="${BASE_DIR}/help/slant_logo_imwt.txt"
+            ;;
+        "INTERACTIVE_COMPARATIVE")
+            module_logo="${BASE_DIR}/help/slant_logo_imca.txt"
+            ;;
+        "GENOME_SELECTOR")
+            module_logo="${BASE_DIR}/help/slant_logo_genome_selector.txt"
+            ;;
+    esac
+    if [ -f "$base_logo" ]; then
+        cat "$base_logo"
+    fi
+
+    if [ -f "$module_logo" ]; then
+        local color=$(MODULE_COLORS "$module")
+        echo -e "${color}$(cat "$module_logo")${RESET_COLOR}"
+    fi
+}
+
+
+
+# Define RGB colors for each module
+MODULE_COLORS() {
+    local module="$1"
+    case "$module" in
+        "RAWREAD_QC")            echo -e "\033[38;2;255;0;0m";;         # FF0000 (red)
+        "ASSEMBLY_BINNING")      echo -e "\033[38;2;255;147;0m";;       # FF9300 (orange)
+        "BIN_ASSESSMENT")        echo -e "\033[38;2;0;176;80m";;        # 00B050 (green)
+        "COMPARATIVE_ANNOTATION") echo -e "\033[38;2;78;149;217m";;     # 4E95D9 (blue)
+        "WMS_TAXONOMY")          echo -e "\033[38;2;8;70;250m";;        # 0846FA (dark blue)
+        "WMS_TAXONOMY_SYLPH")    echo -e "\033[38;2;8;70;250m";;        # 0846FA (dark blue)
+        "WMS_TAXONOMY_KRAKEN")   echo -e "\033[38;2;8;70;250m";;        # 0846FA (dark blue)
+        "WMS_FUNCTION")          echo -e "\033[38;2;112;48;160m";;      # 7030A0 (purple)
+        "INTERACTIVE_COMPARATIVE") echo -e "\033[38;2;78;149;217m";;    #  COMPARATIVE_ANNOTATION 
+        "INTERACTIVE_TAXONOMY")   echo -e "\033[38;2;8;70;250m";;   
+        "GENOME_SELECTOR")       echo -e "\033[38;2;0;176;80m\033[38;2;78;149;217m";;  # Combine BIN_ASSESSMENT and COMPARATIVE_ANNOTATION
+
+        *)                       echo -e "\033[0m";;                    # default color
+    esac
+}
+RESET_COLOR="\033[0m"
+
+# check files. 
+check_module_dependencies() {
+    local module="$1"
+    
+    echo -e "\n${color}Checking dependencies for module: $module...${RESET_COLOR}"
+    
+    # Python script with better output options
+    python "${DB_DIR}/download_db_metafun.py" --check-only --module "$module" --db-dir "$DB_DIR" --sif-dir "$SIF_DIR" --concise-output
+    
+    if [ $? -ne 0 ]; then
+        echo -e "\n\033[31mERROR: Missing required files for module $module.\033[0m"
+        echo -e "Please run: metafun_test -module DOWNLOAD_DB\n"
+        exit 1
+    fi
+    
+    echo -e "\033[32mAll required files for module $module are available.\033[0m"
+
+
+
+}
+
+
+display_module_logo() {
+    local module="$1"
+    local slant_logo=""
+    local color=$(MODULE_COLORS "$module")
+
+    if [ -f "${BASE_DIR}/help/logo.txt" ]; then
+        if [ "$module" = "GENOME_SELECTOR" ]; then
+            # GENOME_SELECTOR의 경우 로고를 반반 나누어 색상 적용
+            local green=$(MODULE_COLORS 'BIN_ASSESSMENT')
+            local blue=$(MODULE_COLORS 'COMPARATIVE_ANNOTATION')
+            awk -v green="$green" -v blue="$blue" -v reset="$RESET_COLOR" '
+                NR <= 16 {print green $0 reset; next}
+                NR <= 32 {print blue $0 reset; next}
+                {print reset $0}
+            ' "${BASE_DIR}/help/logo.txt"
+        else
+            # 다른 모듈들은 기존대로 처리
+            echo -e "${color}$(cat "${BASE_DIR}/help/logo.txt")${RESET_COLOR}"
+        fi
+    fi
+
+
+    # # represent main logo
+    # if [ -f "${BASE_DIR}/help/logo.txt" ]; then
+    #     echo -e "${color}$(cat "${BASE_DIR}/help/logo.txt")${RESET_COLOR}"
+
+    # fi
+    
+    # 모듈별 slant 로고 파일 결정
+    case "$module" in
+        "RAWREAD_QC")
+            slant_logo="${BASE_DIR}/help/slant_logo_rawread_qc.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'RAWREAD_QC')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "ASSEMBLY_BINNING")
+            slant_logo="${BASE_DIR}/help/slant_logo_assembly_binning.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'ASSEMBLY_BINNING')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "BIN_ASSESSMENT") 
+            slant_logo="${BASE_DIR}/help/slant_logo_bin_assessment.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'BIN_ASSESSMENT')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "WMS_TAXONOMY") 
+            slant_logo="${BASE_DIR}/help/slant_logo_wms_taxonomy.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'WMS_TAXONOMY')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "WMS_FUNCTION")
+            slant_logo="${BASE_DIR}/help/slant_logo_wms_function.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'WMS_FUNCTION')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "COMPARATIVE_ANNOTATION")   
+            slant_logo="${BASE_DIR}/help/slant_logo_comparative_annotation.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'COMPARATIVE_ANNOTATION')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "INTERACTIVE_TAXONOMY")
+            slant_logo="${BASE_DIR}/help/slant_logo_imwt.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'INTERACTIVE_TAXONOMY')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "INTERACTIVE_COMPARATIVE") 
+            slant_logo="${BASE_DIR}/help/slant_logo_imca.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'INTERACTIVE_COMPARATIVE')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "GENOME_SELECTOR")   
+            slant_logo="${BASE_DIR}/help/slant_logo_genome_selector.txt"
+            if [ -f "$slant_logo" ]; then
+                # GENOME_SELECTOR 메인 로고도 반반 색상 처리
+                local green=$(MODULE_COLORS 'BIN_ASSESSMENT')
+                local blue=$(MODULE_COLORS 'COMPARATIVE_ANNOTATION')
+                
+                # 메인 로고 (logo.txt) 처리
+                # if [ -f "${BASE_DIR}/help/logo.txt" ]; then
+                #     awk -v green="$green" -v blue="$blue" -v reset="$RESET_COLOR" '{
+                #         if (NR <= 3) {
+                #             print green $0 reset;
+                #         } else if (NR <= 6) {
+                #             print blue $0 reset;
+                #         } else {
+                #             print reset $0;
+                #         }
+                #     }' "${BASE_DIR}/help/logo.txt"
+                # fi
+                
+                # slant 로고 처리
+                awk -v green="$green" -v blue="$blue" -v reset="$RESET_COLOR" '{
+                    if (NR <= 6) {
+                        print green $0 reset;
+                    } else if (NR <= 12) {
+                        print blue $0 reset;
+                    } else {
+                        print reset $0;
+                    }
+                }' "$slant_logo"
+            fi
+            ;;
+    esac
+}
+
+
+
+
+
+# Add a debug function
+debug_module_check() {
+    echo "DEBUG INFO:"
+    echo "DB_DIR: $DB_DIR"
+    echo "SIF_DIR: $SIF_DIR"
+    echo "Extracted files record:"
+    if [ -f "${DB_DIR}/extracted_files.json" ]; then
+        cat "${DB_DIR}/extracted_files.json"
+    else
+        echo "No extraction record found!"
+    fi
+    echo "Directory listings:"
+    ls -l "$DB_DIR"
+    ls -l "$SIF_DIR"
+}
+
+
+
+display_module_availability() {
+    echo -e "\n\033[1mAvailable Modules:\033[0m"
+    local all_modules=("RAWREAD_QC" "ASSEMBLY_BINNING"   "BIN_ASSESSMENT" "GENOME_SELECTOR" 
+                      "COMPARATIVE_ANNOTATION" "INTERACTIVE_COMPARATIVE"
+                      "WMS_TAXONOMY" "WMS_TAXONOMY_SYLPH" "WMS_TAXONOMY_KRAKEN" "INTERACTIVE_TAXONOMY" "WMS_FUNCTION"  
+                      )
+
+#    debug_module_check
+
+    local extracted_record="${DB_DIR}/extracted_files.json"
+
+    # for module in "${all_modules[@]}"; do
+    #     local color=$(MODULE_COLORS "$module")
+    #     local ready_color="\033[34m"  # Blue for ready
+    #     local missing_color="\033[31m"  # Red for not ready
+
+
+
+    #     python "${DB_DIR}/download_db_metafun.py" --check-only --module "$module" --db-dir "$DB_DIR" --sif-dir "$SIF_DIR" --simple-output > /dev/null 2>&1
+    #     local status=$?
+        
+    #     if [ $status -eq 0 ]; then
+    #         echo -e "  ${color}✓ $module${RESET_COLOR} : ${ready_color}Ready to use${RESET_COLOR}"
+    #     else
+    #         echo -e "  ${color}• $module${RESET_COLOR} : ${missing_color}Requires database download${RESET_COLOR}"
+    #     fi
+    # done
+    # echo ""
+    for module in "${all_modules[@]}"; do
+        local color=$(MODULE_COLORS "$module")
+        local ready_color="\033[34m"  # Blue for ready
+        local missing_color="\033[31m"  # Red for not ready
+        
+        # Special case for GENOME_SELECTOR
+        if [ "$module" = "GENOME_SELECTOR" ]; then
+            local green=$(MODULE_COLORS 'BIN_ASSESSMENT')
+            local blue=$(MODULE_COLORS 'COMPARATIVE_ANNOTATION')
+            
+            python "${DB_DIR}/download_db_metafun.py" --check-only --module "$module" --db-dir "$DB_DIR" --sif-dir "$SIF_DIR" --simple-output > /dev/null 2>&1
+            local status=$?
+            
+            if [ $status -eq 0 ]; then
+                echo -e "  ${green}✓ GENOME_${blue}SELECTOR${RESET_COLOR} : ${ready_color}Ready to use${RESET_COLOR}"
+            else
+                echo -e "  ${green}• GENOME_${blue}SELECTOR${RESET_COLOR} : ${missing_color}Requires database download${RESET_COLOR}"
+            fi
+        else
+            python "${DB_DIR}/download_db_metafun.py" --check-only --module "$module" --db-dir "$DB_DIR" --sif-dir "$SIF_DIR" --simple-output > /dev/null 2>&1
+            local status=$?
+            
+            if [ $status -eq 0 ]; then
+                echo -e "  ${color}✓ $module${RESET_COLOR} : ${ready_color}Ready to use${RESET_COLOR}"
+            else
+                echo -e "  ${color}• $module${RESET_COLOR} : ${missing_color}Requires database download${RESET_COLOR}"
+            fi
+        fi
+    done
+    echo ""    
+}
+
+# parameter check function 
+process_help_placeholders() {
+    local module="$1"
+    local help_file="$2"
+
+    local placeholders=$(grep -A 10 "^\[$module\]" "${BASE_DIR}/help/param_map.cfg" | 
+                        grep "^placeholders=" | cut -d= -f2 | tr -d '\r')
+    # Basic replacements
+    sed_commands=(
+        -e "s|\${launch_dir}|${LAUNCH_DIR}|g"
+        -e "s|\${outdir_Base}|${OUTPUT_DIR:-${LAUNCH_DIR}}|g"
+    )
+    
+    # Process each placeholder
+    IFS=',' read -ra PLACEHOLDER_ARRAY <<< "$placeholders"
+    for ph in "${PLACEHOLDER_ARRAY[@]}"; do
+        # For each placeholder, use the actual variable value
+        eval "local value=\${$ph:-}"
+        sed_commands+=(-e "s|%${ph}%|${value}|g")
+    done
+
+    # 조건부 파라미터 처리
+    IFS=',' read -ra cond_pairs <<< "$cond_params"
+    for pair in "${cond_pairs[@]}"; do
+        IFS='=' read -r param condition <<< "$pair"
+        if [[ "$condition" == "filter=custom" && "$FILTER" == "custom" ]]; then
+            sed_commands+=(-e "s|%${param}%|${!param}|g")
+        else
+            sed_commands+=(-e "/%${param}%/d")
+        fi
+    done
+
+    # echo "DEBUG: Replacing placeholders for $module"
+    # for cmd in "${sed_commands[@]}"; do
+    #     echo "  $cmd"
+    # done
+        
+    sed "${sed_commands[@]}" "$help_file"
+}
+
+
+if [ "$HELP_REQUESTED" = true ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    display_module_availability
+    if [ -n "$MODULE" ]; then
+        module_lower=$(echo "$MODULE" | tr '[:upper:]' '[:lower:]')
+        help_file="${BASE_DIR}/help/${module_lower}.txt"
+        
+        # 로고 한 번만 표시
+        display_module_logo "$MODULE"
+        
+    if [ -f "$help_file" ]; then
+        #display_module_logo "$MODULE"
+        process_help_placeholders "$MODULE" "$help_file" | while IFS= read -r line; do
+            echo -e "$line"
+        done
+        exit 0
+    fi
+    else
+        # If no module is specified, display logo in default color
+        if [ -f "${BASE_DIR}/help/logo.txt" ]; then
+            cat "${BASE_DIR}/help/logo.txt"
+        fi
+        
+        if [ -f "${BASE_DIR}/help/general.txt" ]; then
+            sed -e "s|\${launch_dir}|${LAUNCH_DIR}|g" \
+                -e "s|\${outdir_Base}|${OUTPUT_DIR:-${LAUNCH_DIR}}|g" \
+                "${BASE_DIR}/help/general.txt" | while IFS= read -r line; do
+                echo -e "$line"
+            done
+        else
+            usage
+        fi
+        exit 0
+    fi
+fi
+
+# no module specified. print help 
+if [ -z "$MODULE" ]; then
+
+#    display_logos "$MODULE"
+    
+    echo -e "\n\033[1;31mERROR:\033[0m No module specified. Please select a module to run."
+    echo -e "\033[1;33mTip:\033[0m Use one of the available modules listed above.\n"
+    echo -e "You can download the database by running the following command:"
+    echo -e "$ metafun -module DOWNLOAD_DB"
+    display_module_availability
+        
+    #echo
+    usage
+    exit 1
+fi
+
+
+# If SAMPLE_COL is provided but SAMPLE_ID isn't, use SAMPLE_COL value for both
+[ -z "$SAMPLE_ID" -a -n "$SAMPLE_COL" ] && SAMPLE_ID="$SAMPLE_COL"
+# If SAMPLE_ID is provided but SAMPLE_COL isn't, use SAMPLE_ID value for both
+[ -n "$SAMPLE_ID" -a -z "$SAMPLE_COL" ] && SAMPLE_COL="$SAMPLE_ID"
+
+# Validate arguments for the selected module
+validate_args "$MODULE"
+
+display_module_logo "$MODULE"
+
+
+
+
+# real execution functions 
+# Run the appropriate module
+#case "$MODULE" in
+case $(normalize_module "$MODULE") in
+
+    RAWREAD_QC)
+        check_module_dependencies "$MODULE"
+        #validate_args "$MODULE"
+        validate_args "$MODULE" "$@"
+
+
+        FILTER="${FILTER:-human}"
+        PROCESSORS="${PROCESSORS:-4}"
+        OUTPUT_DIR="${OUTPUT_DIR:-${LAUNCH_DIR}/results/metagenome/RAWREAD_QC}"
+        NF_PARAMS="--inputDir $INPUT_DIR"
+        NF_PARAMS="${NF_PARAMS} --outdir $OUTPUT_DIR"
+        NF_PARAMS="${NF_PARAMS} --cpus $PROCESSORS"
+        NF_PARAMS="${NF_PARAMS} --filter ${FILTER}"
+
+        CONFIG_PATH="${CONFIG_DIR}/nextflow.config"
+
+        echo "Running RAWREAD_QC with the following parameters:"
+        echo "Input directory: ${INPUT_DIR}"
+        echo "Output directory: ${OUTPUT_DIR}"
+        echo "Host filter: ${FILTER}"
+        if [ "$FILTER" != "human" ] && [ "$FILTER" != "none" ]; then
+            echo "Using index: ${DB_DIR}/host_genome/${FILTER}/${FILTER}"
+        fi
+        echo "Threads: ${PROCESSORS}"
+ 
+ 
+        echo -e "\n\033[1;36m=== Nextflow Command ===\033[0m"
+        echo "nextflow run \"${NF_DIR}/RAWREAD_QC_apptainer.nf\" \\"
+        echo "  ${NF_PARAMS} \\"
+        echo "  -profile RAWREAD_QC \\"
+        echo "  -c ${CONFIG_PATH}"
+        echo -e "\033[1;36m========================\033[0m\n"
+
+
+            cd "$LAUNCH_DIR"
+        nextflow run "${NF_DIR}/RAWREAD_QC_apptainer.nf" ${NF_PARAMS}  -profile RAWREAD_QC -c ${CONFIG_PATH}
+        
+        ;;
+        
+    ASSEMBLY_BINNING)
+        check_module_dependencies "$MODULE"
+        validate_args "$MODULE"
+# defualt value for assembly_binning
+        PROCESSORS="${PROCESSORS:-8}"
+        OUTPUT_DIR="${OUTPUT_DIR:-${LAUNCH_DIR}/results/metagenome/ASSEMBLY_BINNING}"
+        MEGAHIT_PRESETS="${MEGAHIT_PRESETS:-default}"
+        SEMIBIN2_MODE="${SEMIBIN2_MODE:-self}"
+
+        NF_ARGS=()
+        [ -n "$INPUT_DIR" ] && NF_ARGS+=("--inputDir=$INPUT_DIR")
+        [ -n "$OUTPUT_DIR" ] && NF_ARGS+=("--outdir=$OUTPUT_DIR")
+        [ -n "$PROCESSORS" ] && NF_ARGS+=("--cpus=$PROCESSORS")
+        [ -n "$MEGAHIT_PRESETS" ] && NF_ARGS+=("--megahit_presets=$MEGAHIT_PRESETS")
+        [ -n "$SEMIBIN2_MODE" ] && NF_ARGS+=("--semibin2_mode=$SEMIBIN2_MODE")
+
+        # NF_ARGS=""
+        # [ -n "$INPUT_DIR" ] && NF_ARGS="$NF_ARGS --inputDir $INPUT_DIR"
+        # [ -n "$OUTPUT_DIR" ] && NF_ARGS="$NF_ARGS --outdir $OUTPUT_DIR"
+        # [ -n "$PROCESSORS" ] && NF_ARGS="$NF_ARGS --cpus $PROCESSORS"
+        CONFIG_PATH="${CONFIG_DIR}/nextflow.config"
+
+        echo -e "\n\033[1;36m=== Nextflow Command ===\033[0m"
+        echo "nextflow run \"${NF_DIR}/ASSEMBLY_BINNING_apptainer.nf\" \\"
+        printf "  %s \\\n" "${NF_ARGS[@]}"
+        echo "  -profile ASSEMBLY_BINNING \\"
+        echo "  -c ${CONFIG_PATH}"
+
+        nextflow run "${NF_DIR}/ASSEMBLY_BINNING_apptainer.nf" \
+            "${NF_ARGS[@]}" \
+            -profile ASSEMBLY_BINNING \
+            -c "${CONFIG_PATH}"
+        ;;
+        
+    BIN_ASSESSMENT)
+        check_module_dependencies "$MODULE"
+        
+        validate_args "$MODULE" "$@"          
+        #validate_args "$MODULE"
+# default value for bin_assessment
+        PROCESSORS="${PROCESSORS:-20}"
+        OUTPUT_DIR="${OUTPUT_DIR:-${LAUNCH_DIR}/results/metagenome/BIN_ASSESSMENT}"
+        INPUT_DIR="${INPUT_DIR:-${LAUNCH_DIR}/results/metagenome/ASSEMBLY_BINNING/final_bins}"
+        PASS_QUALITY="${PASS_QUALITY:-QS50.pass}"
+        DATA_TYPE="${DATA_TYPE:-MAG}"
+        RUN_ID="${RUN_ID:-$(date +%Y%m%d%H%M%S)_${RANDOM}}"
+
+        if [ -n "$METADATA" ]; then
+            # 상대 경로를 절대 경로로 변환
+            if [[ ! "$METADATA" = /* ]]; then
+                METADATA="$(realpath "$METADATA")"
+            fi
+            echo "Using metadata file: $METADATA"
+        fi
+
+        # configure command line arguments
+        NF_ARGS=()
+        [ -n "$METADATA" ] && NF_ARGS+=("--metadata=$METADATA")
+        [ -n "$ACCESSION" ] && NF_ARGS+=("--accession_column=$ACCESSION")
+        [ -n "$INPUT_DIR" ] && NF_ARGS+=("--inputDir=$INPUT_DIR")
+        [ -n "$OUTPUT_DIR" ] && NF_ARGS+=("--outdir_Base=$OUTPUT_DIR")
+        [ -n "$PROCESSORS" ] && NF_ARGS+=("--cpus=$PROCESSORS")
+        [ -n "$PASS_QUALITY" ] && NF_ARGS+=("--pass_quality=$PASS_QUALITY")
+        [ -n "$DATA_TYPE" ] && NF_ARGS+=("--data_type=$DATA_TYPE") 
+        [ -n "$RUN_ID" ] && NF_ARGS+=("--run_id=$RUN_ID")
+        CONFIG_PATH="${CONFIG_DIR}/nextflow.config"
+
+        echo -e "\n\033[1;36m=== Nextflow Command ===\033[0m"
+        echo "nnextflow ru \"${NF_DIR}/BIN_ASSESSMENT_apptainer.nf\" \\"
+        printf "  %s \\\n" "${NF_ARGS[@]}" 
+        echo "  -profile BIN_ASSESSMENT \\"
+        echo "  -c ${CONFIG_PATH}"
+
+        if [ ! -d "$INPUT_DIR" ]; then
+            echo -e "\n\033[1;33mWARNING: Input directory does not exist: $INPUT_DIR\033[0m"
+            echo -e "This may be because ASSEMBLY_BINNING did not generate final_bins."
+            echo -e "If you would like to use your own genomes, please provide metadata file with  folder contating fasta genomes(.fa genomes)."
+
+            # read -p "Do you want to continue anyway? [y/N] " response
+            # response=${response,,}  # 소문자로 변환
+            # if [[ ! "$response" =~ ^(yes|y)$ ]]; then
+            #     exit 1
+            # fi
+        fi
+
+        # nextflow 실행
+        nextflow run "${NF_DIR}/BIN_ASSESSMENT_apptainer.nf" \
+            "${NF_ARGS[@]}" \
+            -profile BIN_ASSESSMENT \
+            -c "${CONFIG_PATH}"
+        ;;
+    WMS_TAXONOMY|WMS_TAXONOMY_SYLPH|WMS_TAXONOMY_KRAKEN)
+        #check_module_dependencies "$MODULE"
+        PROFILER="${PROFILER:-sylph}"
+        if [ -z "$PROFILER" ]; then
+            echo -e "No profiler specified, using default: \033[1;33msylph\033[0m"
+            PROFILER="sylph"
+        else
+            echo -e "Using profiler: \033[1;33m$PROFILER\033[0m"
+        fi
+        if [ "$PROFILER" = "kraken2" ]; then
+            check_module_dependencies "WMS_TAXONOMY_KRAKEN"
+        else
+            check_module_dependencies "WMS_TAXONOMY_SYLPH"
+        fi
+                
+
+        OUTPUT_DIR="${OUTPUT_DIR:-${LAUNCH_DIR}/results/metagenome/WMS_TAXONOMY}"
+        #PROFILER="${PROFILER:-sylph}"
+        KRAKEN_METHOD="${KRAKEN_METHOD:-default}"
+        CONFIDENCE_FILTER="${CONFIDENCE_FILTER:-0.1}"
+        RELAB_FILTER="${RELAB_FILTER:-0.0001}"
+        SYLPH_ABUNDANCE_TYPE="${SYLPH_ABUNDANCE_TYPE:-relative_abundance}"
+        INPUT_DIR="${INPUT_DIR:-${LAUNCH_DIR}/results/metagenome/RAWREAD_QC/read_filtered}"
+        if [ "$MODULE" = "WMS_TAXONOMY_SYLPH" ]; then
+            PROFILER="sylph"
+        elif [ "$MODULE" = "WMS_TAXONOMY_KRAKEN" ]; then
+            PROFILER="kraken2"
+        fi
+        echo "DEBUG: INPUT_DIR set to: $INPUT_DIR"
+        echo "DEBUG: INPUT_DIR exists: $([ -d "$INPUT_DIR" ] && echo 'Yes' || echo 'No')"
+        echo "DEBUG: PROFILER set to: $PROFILER"
+
+                
+        
+        validate_args "$MODULE"
+
+        NF_ARGS=()
+        [ -n "$INPUT_DIR" ] && NF_ARGS+=("--inputDir=$INPUT_DIR")
+        [ -n "$METADATA" ] && NF_ARGS+=("--metadata=$METADATA")
+        [ -n "$SAMPLE_ID" ] && NF_ARGS+=("--sampleIDcolumn=$SAMPLE_ID")
+        [ -n "$ANALYSIS" ] && NF_ARGS+=("--analysiscolumn=$ANALYSIS")
+        [ -n "$PROFILER" ] && NF_ARGS+=("--profiler=$PROFILER")
+        [ -n "$PROCESSORS" ] && NF_ARGS+=("--cpus=$PROCESSORS")
+        [ -n "$OUTPUT_DIR" ] && NF_ARGS+=("--outdir=$OUTPUT_DIR")
+        [ -n "$KRAKEN_METHOD" ] && NF_ARGS+=("--kraken_method=$KRAKEN_METHOD")
+        [ -n "$CONFIDENCE_FILTER" ] && NF_ARGS+=("--confidence_filter=$CONFIDENCE_FILTER")
+        [ -n "$RELAB_FILTER" ] && NF_ARGS+=("--relab_filter=$RELAB_FILTER")
+        [ -n "$SYLPH_ABUNDANCE_TYPE" ] && NF_ARGS+=("--sylph_abundance_type=$SYLPH_ABUNDANCE_TYPE")
+        
+        CONFIG_PATH="${CONFIG_DIR}/nextflow.config"
+        echo -e "\n\033[1;36m=== Nextflow Command ===\033[0m"
+        echo "nextflow run \"${NF_DIR}/WMS_TAXONOMY_apptainer.nf\" \\"
+        printf "  %s \\\n" "${NF_ARGS[@]}"
+        echo "  -profile WMS_TAXONOMY \\"
+        echo "  -c ${CONFIG_PATH}"
+        
+        nextflow run "${NF_DIR}/WMS_TAXONOMY_apptainer.nf" \
+            "${NF_ARGS[@]}" \
+            -profile WMS_TAXONOMY \
+            -c "${CONFIG_PATH}"
+        
+        ;;        
+
+    # WMS_TAXONOMY)
+    #     check_module_dependencies "$MODULE"
+    #     nextflow run "${NF_DIR}/WMS_TAXONOMY_apptainer.nf" \
+    #         --inputDir "$INPUT_DIR" \
+    #         --metadata "$METADATA" \
+    #         --sampleIDcolumn "$SAMPLE_ID" \
+    #         --analysiscolumn "$ANALYSIS"
+    #     ;;
+        
+    WMS_FUNCTION)
+        check_module_dependencies "$MODULE"
+        validate_args "$MODULE" "$@"
+        
+        
+        #[ -z "$INPUT_DIR" ] && error "Input directory (-i) required"
+        [ -z "$METADATA" ] && error "Metadata file (-m) required"
+        [ -z "$SAMPLE_ID" ] && error "Sample ID column (-s) required"
+        [ -z "$ANALYSIS" ] && error "Analysis column (-a) required"
+        
+        # 기본값 설정
+        INPUT_DIR="${INPUT_DIR:-${LAUNCH_DIR}/results/metagenome/RAWREAD_QC/read_filtered}"
+
+        PROCESSORS="${PROCESSORS:-36}"
+        OUTPUT_DIR="${OUTPUT_DIR:-${LAUNCH_DIR}/results/metagenome/WMS_FUNCTION}"
+        
+        # Nextflow 인수 구성
+        NF_ARGS=()
+        NF_ARGS+=("--inputDir=$INPUT_DIR")
+        NF_ARGS+=("--metadata=$METADATA")
+        NF_ARGS+=("--sampleIDcolumn=$SAMPLE_ID")
+        NF_ARGS+=("--analysiscolumn=$ANALYSIS")
+        [ -n "$PROCESSORS" ] && NF_ARGS+=("--cpus=$PROCESSORS")
+        [ -n "$OUTPUT_DIR" ] && NF_ARGS+=("--outdir=$OUTPUT_DIR")  
+
+        
+        CONFIG_PATH="${CONFIG_DIR}/nextflow.config"
+        
+        # Nextflow 실행 명령 출력
+        echo -e "\n\033[1;36m=== Nextflow Command ===\033[0m"
+        echo "nextflow run \"${NF_DIR}/WMS_FUNCTION_apptainer.nf\" \\"
+        printf "  %s \\\n" "${NF_ARGS[@]}"
+        echo "  -profile WMS_FUNCTION \\"
+        echo "  -c ${CONFIG_PATH}"
+        
+        # 실제 실행
+        nextflow run "${NF_DIR}/WMS_FUNCTION_apptainer.nf" \
+            "${NF_ARGS[@]}" \
+            -profile WMS_FUNCTION \
+            -c "${CONFIG_PATH}"
+        ;;
+        
+    COMPARATIVE_ANNOTATION)
+        check_module_dependencies "$MODULE"
+        validate_args "$MODULE"
+
+        # If no metadata file is specified, try to find the genome_selector_result.csv file
+        if [ -z "$METADATA" ]; then
+            # Try to find the most recent genome_selector_result.csv file
+            DEFAULT_METADATA=$(find . -name "genome_selector_result.csv" -type f | sort -r | head -n 1)
+            
+            if [ -n "$DEFAULT_METADATA" ]; then
+                METADATA="$DEFAULT_METADATA"
+                echo "Using genome selector result file as metadata: $METADATA"
+            else
+                echo "No metadata file specified and no genome_selector_result.csv found."
+                echo "Please provide a metadata file with -m/--metadata or run GENOME_SELECTOR first."
+            fi
+        fi
+
+        PROCESSORS="${PROCESSORS:-40}"
+        #OUTPUT_DIR="${OUTPUT_DIR:-${LAUNCH_DIR}/results/metagenome/COMPARATIVE_ANNOTATION}"
+        MODULE_COMPLETENESS="${MODULE_COMPLETENESS:-0.5}"
+        PAN_IDENTITY="${PAN_IDENTITY:-0.8}"
+        PAN_COVERAGE="${PAN_COVERAGE:-0.8}"
+        KINGDOM="${KINGDOM:-bacteria}"
+        KOFAMSCAN_EVAL="${KOFAMSCAN_EVAL:-0.00001}"
+        VFDB_IDENTITY="${VFDB_IDENTITY:-50}"
+        VFDB_COVERAGE="${VFDB_COVERAGE:-80}"
+        VFDB_E_VALUE="${VFDB_E_VALUE:-1e-10}"
+        CAZYME_HMM_EVAL="${CAZYME_HMM_EVAL:-1e-15}"
+        CAZYME_HMM_COV="${CAZYME_HMM_COV:-0.35}"
+        RUN_DREP="${RUN_DREP:-true}"
+        DREP_ANI="${DREP_ANI:-0.995}"
+        DREP_COV="${DREP_COV:-0.3}"
+        DREP_ALGORITHM="${DREP_ALGORITHM:-skani}"
+        SAMPLE_COL="${SAMPLE_COL:-1}"
+
+     
+        # Build NF_ARGS array with all parameters
+        NF_ARGS=()
+        [ -n "$INPUT_DIR" ] && NF_ARGS+=("--inputDir=$INPUT_DIR")
+        [ -n "$METADATA" ] && NF_ARGS+=("--metadata=$METADATA")
+        [ -n "$META_COL" ] && NF_ARGS+=("--metacol=$META_COL")
+        [ -n "$SAMPLE_COL" ] && NF_ARGS+=("--samplecol=$SAMPLE_COL")
+        #[ -n "$OUTPUT_DIR" ] && NF_ARGS+=("--outdir=$OUTPUT_DIR")
+        [ -n "$PROCESSORS" ] && NF_ARGS+=("--cpus=$PROCESSORS")
+        
+        # Add COMPARATIVE_ANNOTATION specific parameters
+        [ -n "$MODULE_COMPLETENESS" ] && NF_ARGS+=("--module_completeness=$MODULE_COMPLETENESS")
+        [ -n "$PAN_IDENTITY" ] && NF_ARGS+=("--pan_identity=$PAN_IDENTITY")
+        [ -n "$PAN_COVERAGE" ] && NF_ARGS+=("--pan_coverage=$PAN_COVERAGE")
+        [ -n "$KINGDOM" ] && NF_ARGS+=("--kingdom=$KINGDOM")
+        [ -n "$KOFAMSCAN_EVAL" ] && NF_ARGS+=("--kofamscan_eval=$KOFAMSCAN_EVAL")
+        [ -n "$VFDB_IDENTITY" ] && NF_ARGS+=("--VFDB_identity=$VFDB_IDENTITY")
+        [ -n "$VFDB_COVERAGE" ] && NF_ARGS+=("--VFDB_coverage=$VFDB_COVERAGE")
+        [ -n "$VFDB_E_VALUE" ] && NF_ARGS+=("--VFDB_e_value=$VFDB_E_VALUE")
+        [ -n "$CAZYME_HMM_EVAL" ] && NF_ARGS+=("--CAZyme_hmm_eval=$CAZYME_HMM_EVAL")
+        [ -n "$CAZYME_HMM_COV" ] && NF_ARGS+=("--CAZyme_hmm_cov=$CAZYME_HMM_COV")
+        [ -n "$RUN_DREP" ] && NF_ARGS+=("--run_drep=$RUN_DREP")
+        [ -n "$DREP_ANI" ] && NF_ARGS+=("--drep_ani=$DREP_ANI")
+        [ -n "$DREP_COV" ] && NF_ARGS+=("--drep_cov=$DREP_COV")
+        [ -n "$DREP_ALGORITHM" ] && NF_ARGS+=("--drep_algorithm=$DREP_ALGORITHM")
+        
+        CONFIG_PATH="${CONFIG_DIR}/nextflow.config"
+        
+    
+        echo -e "\n\033[1;36m=== Nextflow Command ===\033[0m"
+        echo "nextflow run \"${NF_DIR}/COMPARATIVE_ANNOTATION_apptainer.nf\" \\"
+        printf "  %s \\\n" "${NF_ARGS[@]}" 
+        echo "  -profile COMPARATIVE_ANNOTATION \\"
+        echo "  -c ${CONFIG_PATH}"
+
+
+        echo "Running COMPARATIVE_ANNOTATION with arguments: $NF_ARGS"
+        nextflow run "${NF_DIR}/COMPARATIVE_ANNOTATION_apptainer.nf" \
+            "${NF_ARGS[@]}" \
+            -profile COMPARATIVE_ANNOTATION \
+            -c "${CONFIG_PATH}"
+        ;;
+    
+    INTERACTIVE_TAXONOMY)
+        check_module_dependencies "$MODULE"
+        # Set default values if not provided
+        if [ -z "$INPUT_DIR" ]; then
+            INPUT_DIR="results/metagenome/WMS_TAXONOMY/phyloseq"
+        fi
+        if [ -z "$OUTPUT_DIR" ]; then
+            OUTPUT_DIR="results/interactive_taxonomy"
+        fi
+        if [ -z "$PROCESSORS" ]; then
+            PROCESSORS=4
+        fi
+        
+        # Ensure INPUT_DIR exists
+        if [ ! -d "$INPUT_DIR" ]; then
+            error "Input directory does not exist: $INPUT_DIR"
+        fi
+        
+        # Create output directory
+        mkdir -p "$OUTPUT_DIR"
+        
+        # Get absolute paths for binding
+        ABS_INPUT_DIR=$(realpath "$INPUT_DIR")
+        ABS_OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
+        
+        echo "Starting interactive taxonomy analysis..."
+        echo "Input directory: $ABS_INPUT_DIR"
+        echo "Output directory: $ABS_OUTPUT_DIR"
+        
+        # Run with proper binding
+        apptainer exec \
+            -B "$ABS_INPUT_DIR:/data" \
+            -B "$ABS_OUTPUT_DIR:/output" \
+            "${SIF_DIR}/interactive_wms_taxonomy_v01.sif" \
+            Rscript "/scratch/tools/microbiome_analysis/interactive_WMS_TAXONOMY/app.R"
+        ;;
+        
+    INTERACTIVE_COMPARATIVE)
+        # check_module_dependencies "$MODULE"
+        # validate_args "$MODULE" 
+
+        # if [ "$HELP_REQUESTED" = true ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+        #     display_module_help "$MODULE"
+        #     exit 0
+        # fi
+    
+
+        # Set default input directory if not provided
+        if [ -z "$INPUT_DIR" ]; then
+            # Try to find the most recent COMPARATIVE_ANNOTATION result
+            INPUT_DIR=$(find results/metagenome/COMPARATIVE_ANNOTATION -type d -name "20*" | sort -r | head -n 1)
+            if [ -z "$INPUT_DIR" ]; then
+                error "No COMPARATIVE_ANNOTATION results found. Please specify input directory with -i"
+            fi
+            echo "Using most recent COMPARATIVE_ANNOTATION result: $INPUT_DIR"
+        fi
+        
+        # Set defaults for other parameters
+        if [ -z "$OUTPUT_DIR" ]; then
+            OUTPUT_DIR="results/interactive_comparative"
+        fi
+
+        if [ -z "$PROCESSORS" ]; then
+            PROCESSORS=4
+        fi
+        
+        # Ensure INPUT_DIR exists
+        if [ ! -d "$INPUT_DIR" ]; then
+            error "Input directory does not exist: $INPUT_DIR"
+        fi
+        
+        # Create output directory
+        mkdir -p "$OUTPUT_DIR"
+        
+        # Get absolute paths for binding
+        echo "DEBUG: INPUT_DIR: $INPUT_DIR"
+        ABS_INPUT_DIR=$(realpath "$INPUT_DIR")
+        ABS_OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
+        ABS_METADATA=""
+        if [ -n "$METADATA" ]; then
+            if [ ! -f "$METADATA" ]; then
+                error "Metadata file does not exist: $METADATA"
+            fi
+            ABS_METADATA=$(realpath "$METADATA")
+        fi
+        
+        echo "Starting interactive comparative analysis..."
+        echo "Input directory: $ABS_INPUT_DIR"
+        echo "Output directory: $ABS_OUTPUT_DIR"
+        if [ -n "$METADATA" ]; then
+            echo "Metadata file: $ABS_METADATA"
+        fi
+        
+        # Build command arguments
+        APP_ARGS="--input /data --output /output --processors $PROCESSORS"
+        if [ -n "$METADATA" ]; then
+            APP_ARGS="$APP_ARGS --metadata /metadata.csv"
+        fi
+        
+        # Run with proper binding
+        BIND_ARGS="-B $ABS_INPUT_DIR:/data -B $ABS_OUTPUT_DIR:/output"
+        if [ -n "$METADATA" ]; then
+            BIND_ARGS="$BIND_ARGS -B $ABS_METADATA:/metadata.csv"
+        fi
+        
+        apptainer exec $BIND_ARGS \
+            "${SIF_DIR}/interactive_comparative_annotation_v01.sif" \
+            Rscript "/scratch/tools/microbiome_analysis/comparative_annotation/shiny_COMPARATIVE_ANNOTATION.R" $APP_ARGS
+        ;;
+        
+    DOWNLOAD_DB)
+        echo "=== Database Download Tool ==="
+        echo "This will download all required databases and SIF images for metafun_test"
+        echo "Files will be downloaded to the conda package installation directory:"
+        echo "  Databases: ${DB_DIR}"
+        echo "  SIF images: ${SIF_DIR}"
+        echo ""
+        if [ ! -w "$DB_DIR" ] || [ ! -w "$SIF_DIR" ]; then
+            echo "ERROR: No write permission to conda package directories."
+            echo "You may need to run this command with sudo or contact your system administrator."
+            exit 1
+        fi
+        echo ""
+        echo "Starting download..."
+        echo "Databases will be downloaded to: ${DB_DIR}"
+        echo "SIF images will be downloaded to: ${SIF_DIR}"
+        echo ""
+
+        python "${DB_DIR}/download_db_metafun.py" --db-dir "$DB_DIR" --sif-dir "$SIF_DIR" \
+            ${MODULE:+--module "$MODULE"} \
+            ${NO_KRAKEN:+--no-kraken}  
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "Download completed successfully!"
+            echo "These databases will be automatically used by metafun_test modules."
+        else
+            echo ""
+            echo "ERROR: Database download encountered issues."
+            echo "Please check the error messages above."
+            exit 1
+        fi
+        ;;
+        
+    GENOME_SELECTOR)
+        PORT="${PORT:-8050}"
+
+        if [ -z "$FILE_INPUT" ]; then
+            # Try to find the most recent metadata file from BIN_ASSESSMENT
+            DEFAULT_FILE=$(find . -name "combined_metadata_quality_taxonomy_*.csv" -type f | sort -r | head -n 1)
+            
+            if [ -n "$DEFAULT_FILE" ]; then
+                FILE_INPUT="$DEFAULT_FILE"
+                echo "Using most recent BIN_ASSESSMENT metadata file: $FILE_INPUT"
+            else
+                error "No input metadata file specified and no default file found.\nPlease use -i/--input to specify a combined_metadata_quality_taxonomy_*.csv file from BIN_ASSESSMENT."
+            fi
+        fi
+
+
+
+        if [ ! -f "$FILE_INPUT" ]; then
+            error "Input file not found: $FILE_INPUT\nPlease provide a valid metadata CSV file from BIN_ASSESSMENT."
+        fi
+        
+        echo -e "\n\033[1;36m=== GENOME_SELECTOR Parameters ===\033[0m"
+        echo "Input file: ${FILE_INPUT}"
+        echo "Port: ${PORT}"
+        
+        echo -e "\n\033[1;36m=== Command ===\033[0m"
+        echo "python \"${SCRIPTS_DIR}/dash_MAG2.py\" -i \"${FILE_INPUT}\" -p ${PORT}"
+
+        python "${SCRIPTS_DIR}/dash_MAG2.py" -i "${FILE_INPUT}" -p "${PORT}"
+
+
+        ;;
+        
+    PREPARE_CUSTOM_HOST)
+        check_ㅡmodule_dependencies "metafun_v0.1.sif"
+        validate_args "$MODULE"
+        # Default threads if not specified
+        [ -z "$PROCESSORS" ] && PROCESSORS=4
+
+        OUTPUT_DIR="${DB_DIR}/host_genome/${FILTER_NAME}"
+        mkdir -p "$OUTPUT_DIR"
+        
+        echo "Creating custom host genome index..."
+        echo "Input genome: $INPUT_GENOME"
+        echo "Filter name: $FILTER_NAME"        
+        echo "Output prefix: $FILTER_NAME"
+        echo "Threads: $PROCESSORS"
+        
+        # Full paths for the command
+        INPUT_GENOME_ABS=$(realpath "$INPUT_GENOME")
+        OUTPUT_DIR_ABS=$(realpath "$OUTPUT_DIR")
+
+
+    apptainer exec \
+        -B "${INPUT_GENOME_ABS}:/input_genome" \
+        -B "${OUTPUT_DIR_ABS}:/output" \
+        "${SIF_DIR}/metafun_v0.1.sif" \
+        /bin/bash -c "micromamba run -n RAWREAD_QC bowtie2-build --threads ${PROCESSORS} /input_genome /output/${FILTER_NAME}"
+
+        if [ $? -eq 0 ]; then
+            echo -e "\n${GREEN}Success! Bowtie2 index has been built and saved in: ${OUTPUT_DIR}${RESET_COLOR}"
+            echo -e "To use this index with metafun_test, run:"
+            echo -e "${BOLD}  $(basename "$0") -module RAWREAD_QC -i <input_dir> --filter ${FILTER_NAME}${RESET_COLOR}\n"
+        else
+            error "Failed to build bowtie2 index."
+        fi
+        ;;
+    *)
+        SUGGESTION=""
+        all_modules=("RAWREAD_QC" "ASSEMBLY_BINNING" "BIN_ASSESSMENT" "WMS_TAXONOMY" 
+                    "WMS_FUNCTION" "COMPARATIVE_ANNOTATION" "INTERACTIVE_TAXONOMY" 
+                    "INTERACTIVE_COMPARATIVE" "GENOME_SELECTOR" "DOWNLOAD_DB" "PREPARE_CUSTOM_HOST")
+        
+    MODULE_UPPER=$(normalize_module "$MODULE")
+    
+    # 1. token based matching 
+        if [ -z "$SUGGESTION" ]; then
+            highest_score=0
+            
+            for candidate in "${all_modules[@]}"; do
+                score=0
+                
+                # by underscore, separate module name
+                IFS='_' read -ra mod_tokens <<< "$MODULE_UPPER"
+                IFS='_' read -ra candidate_tokens <<< "$candidate"
+                
+                # check if each token is in the candidate module
+                for token in "${mod_tokens[@]}"; do
+                    for c_token in "${candidate_tokens[@]}"; do
+                        # if the token is a prefix of the candidate token, give a score
+                        if [[ "$c_token" == "$token"* && ${#token} -ge 3 ]]; then
+                            # give a score proportional to the prefix length
+                            token_score=$((${#token} * 100 / ${#c_token}))
+                            ((score+=token_score))
+                            break
+                        fi
+                    done
+                done
+                
+                # 최고 점수 업데이트
+                if [ "$score" -gt "$highest_score" ]; then
+                    highest_score=$score
+                    SUGGESTION="$candidate"
+                fi
+            done
+        fi
+        
+        # 2. 특수 케이스 처리 (점수가 낮거나 매치가 없는 경우)
+        if [ -z "$SUGGESTION" ] || [ "$highest_score" -lt 50 ]; then
+            case "$MODULE_UPPER" in
+                *BIN*ASS*|*BINA*|*BINS*)
+                    SUGGESTION="BIN_ASSESSMENT"
+                    ;;
+                *ASS*BIN*|*ASSEMBLY*|*ASSEM*)
+                    SUGGESTION="ASSEMBLY_BINNING"
+                    ;;
+                *RAW*|*READ*QC*|*READS*)
+                    SUGGESTION="RAWREAD_QC"
+                    ;;
+                *TAX*|*TAXA*)
+                    SUGGESTION="WMS_TAXONOMY"
+                    ;;
+                *FUNC*|*FUNCTION*)
+                    SUGGESTION="WMS_FUNCTION"
+                    ;;
+                *COMP*|*ANNOTATION*|*ANN*|*CMP*)
+                    SUGGESTION="COMPARATIVE_ANNOTATION"
+                    ;;
+                *INT*TAX*|*ITAX*)
+                    SUGGESTION="INTERACTIVE_TAXONOMY"
+                    ;;
+                *INT*COM*|*ICOMP*)
+                    SUGGESTION="INTERACTIVE_COMPARATIVE"
+                    ;;
+                *GEN*|*SELECT*|*GSEL*)
+                    SUGGESTION="GENOME_SELECTOR"
+                    ;;
+                *DOWN*|*DB*|*DATABASE*)
+                    SUGGESTION="DOWNLOAD_DB"
+                    ;;
+                *PREP*|*CUSTOM*|*HOST*)
+                    SUGGESTION="PREPARE_CUSTOM_HOST"
+                    ;;
+            esac
+        fi
+
+        if [ -n "$SUGGESTION" ]; then
+            error "Unknown module: $MODULE\n       Did you mean: $SUGGESTION?" "show_modules"
+        else
+            error "Unknown module: $MODULE" "show_modules"
+        fi
+
+        #error "Unknown module: $MODULE"
+        ;;
+esac
+

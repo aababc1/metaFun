@@ -1,0 +1,4 @@
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_test: 727> /data1/leehg/miniconda3/envs/build_env/bin/conda build --no-test ./
+
+ 3026  2025-03-03 23:36:38 anaconda upload --force /data1/leehg/miniconda3/envs/build_env/conda-bld/linux-64/metafun_test-0.1.0-py312_0.tar.bz2
+

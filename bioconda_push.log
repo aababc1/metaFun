@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+(build_env) leehg@03.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/meta
+fun_test: 473> /data1/leehg/miniconda3/envs/build_env/bin/conda-build ./
+
+#anaconda upload
+(build_env) leehg@03.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/meta
+fun_test: 479> ls /data1/leehg/miniconda3/envs/build_env/conda-bld/linux-64/metafun_test-0.1.0-py312
+_0.tar.bz2 
+
+#bioconda setup . 
+# create local clone of forked bioconda 
+(build_env) leehg@03.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/meta
+fun_test: 482> git clone git@github.com:aababc1/bioconda-recipes.git
+
+

@@ -1,0 +1,63 @@
+\033[1;38;2;0;176;80mGENOME_\033[38;2;78;149;217mSELECTOR\033[0m
+
+Usage : 
+    metafun_test -module GENOME_SELECTOR -i "${your_metadata_file}" -p <port>
+
+\033[1;38;2;0;176;80mGENOME_\033[38;2;78;149;217mSELECTOR\033[0m : Interactive genome selection interface for \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m
+=========================================================
+\033[1m1. Quality and number of all genomes\033[0m
+   - Genome Quality Scatter Plot : Visualize genome quality (Completeness vs Contamination)
+   - Metadata Distribution Plot : Show distribution of selected metadata
+
+\033[1m2. Select genomes that you are interested in\033[0m
+   - Sunburst Plot : Interactive visualization of genome taxonomy
+   - Genome Quality Scatter Plot of Selected Taxon : Quality metrics for selected taxa
+   - Metadata Distribution Plot of Selected Taxon : Metadata distribution for selected taxa
+
+\033[1m3. Download Metadata Table for \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m  
+   - Selected Part of Metadata Table : View and filter selected genomes
+   - Save options : Download locally or save to server for \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m
+
+This module provides an interactive web interface to explore and select genomes based on taxonomy, 
+quality metrics, and other metadata for use in the \033[1;38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m
+
+\033[1mWe recommend you to use visual studio code with Remote - SSH   to run this module.\033[0m
+ https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh
+
+
+\033[1;31mRequired Parameters:\033[0m 
+------------------
+\033[31m-i, --input\033[0m          : Input metadata CSV file from \033[1;38;2;0;176;80mBIN_ASSESSMENT \033[0m output
+                     (combined_metadata_quality_taxonomy_*.csv)
+
+\033[1;33mOptional Parameters:\033[0m 
+------------------
+\033[33m-p, --port\033[0m           : Port to run the web server on (default: 8050)
+
+
+\033[1;38;2;0;255;255mUsage Instructions:\033[0m
+-----------------
+1. Quality and Distribution Overview
+   - Displays distribution and numbers of all genomes based on selected metadata or taxonomic rank
+   - Left plot shows genome quality metrics (Completeness vs Contamination)
+   - Right plot shows distribution of selected metadata (supports both numeric and categorical data)
+
+2. Interactive Genome Selection
+   - Use Sunburst Plot to select genomes for \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m
+   - Click on taxonomic sections to select genomes of interest
+   - Below Sunburst:
+     * Genome Quality Scatter Plot shows quality distribution of selected taxon
+     * Metadata Distribution Plot displays selected taxon's metadata distribution
+     * Both plots support numeric and categorical metadata visualization
+
+3. Selected Genome Management
+   - View metadata table of genomes from selected taxonomic group
+   - Save selection using 'Save to Server':
+     * Saves to current working directory
+     * Default filename: genome_selector_result.csv
+     * This CSV file can be directly used in \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m module
+
+
+\033[38;2;180;180;180mNote:\033[0m This module connects the outputs from \033[38;2;0;176;80mBIN_ASSESSMENT\033[0m 
+to the inputs required for \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m.
+The saved selection file is directly compatible with \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m.

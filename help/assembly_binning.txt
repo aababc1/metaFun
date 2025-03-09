@@ -1,0 +1,60 @@
+\033[1;38;2;240;152;55mASSEMBLY_BINNING\033[0m
+
+Usage :
+    metafun_test -module ASSEMBLY_BINNING --inputDir "${filtered_reads_dir}"
+
+\033[38;2;240;152;55mASSEMBLY_BINNING : Metagenome assembly and binning pipeline\033[0m
+=========================================================
+ \033[38;2;240;152;55mMEGAHIT\033[0m           : De novo assembler with two selectable preset options
+ \033[38;2;240;152;55mSemiBin2\033[0m         : Binning tool with Semi-supervised learning methods. Provides self-supervised and semi-supervised binning.
+ \033[38;2;240;152;55mMetaBAT2\033[0m          : Efficient binning method
+ \033[38;2;240;152;55mDAS_Tool\033[0m          : Combining and refining bins from MetaBAT2 and SemiBin2
+
+This module performs metagenome assembly and binning to generate metagenome-assembled genomes.
+
+\033[1;31mRequired Parameters:\033[0m 
+------------------
+\033[31m--inputDir\033[0m         : Directory containing quality-controlled reads
+                     Should contain paired-end fastq files from RAWREAD_QC
+
+\033[1;33mOptional Parameters:\033[0m 
+------------------
+\033[33m--megahit_presets\033[0m  : Assembly presets for MEGAHIT
+                     Available options:
+                     \033[32mdefault\033[0m          : Default parameters (recommended for most data)
+                     \033[32mmeta-large\033[0m       : For large & complex metagenomes
+                     \033[32mmeta-sensitive\033[0m   : More sensitive but slower
+
+\033[33m--semibin2_mode\033[0m    : Environment model for SemiBin2
+                     Available models and mode:
+                     \033[32mhuman_gut\033[0m, \033[32mdog_gut\033[0m, \033[32mocean\033[0m, 
+                     \033[32msoil\033[0m, \033[32mcat_gut\033[0m, \033[32mhuman_oral\033[0m,
+                     \033[32mmouse_gut\033[0m, \033[32mpig_gut\033[0m, \033[32mbuilt_environment\033[0m,
+                     \033[32mwastewater\033[0m, \033[32mchicken_caecum\033[0m, \033[32mglobal\033[0m, \033[32mself\033[0m
+                     (default: self)
+
+\033[33m--cpus\033[0m             : Number of CPUs to use (default: 8)
+\033[33m--outdir\033[0m           : Output directory 
+                     (default: ${launch_dir}/results/metagenome/ASSEMBLY_BINNING)
+
+
+\033[38;2;0;255;255mOutput File Description:\033[0m
+-----------
+\033[38;2;0;255;255m- assembled_contigs/\033[0m      : Final assembled contigs
+\033[38;2;0;255;255m- metabat2_bins/\033[0m          : MetaBat2 binning results
+\033[38;2;0;255;255m- semibin2_bins/\033[0m          : SemiBin2 binning results
+\033[38;2;0;255;255m- final_bins/\033[0m             : Combined and refined bins using DAS Tool
+
+
+\033[1;36mSelected Parameters:\033[0m
+------------------
+\033[33mInput Directory:\033[0m    %INPUT_DIR%
+\033[33mMEGAHIT Preset:\033[0m     %MEGAHIT_PRESETS%
+\033[33mSemiBin2 Model:\033[0m     %SEMIBIN2_MODE%
+\033[33mCPUs Used:\033[0m         %CPUS%
+\033[33mOutput Directory:\033[0m  %OUTPUT_DIR%
+
+
+\033[38;2;180;180;180mNote:\033[0m Output bins from this module will be used in: 
+\033[38;2;78;149;217mBIN_ASSESSMENT\033[0m
+\033[38;2;0;176;80mCOMPARATIVE_ANNOTATION\033[0m

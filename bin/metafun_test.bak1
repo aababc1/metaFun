@@ -1,0 +1,568 @@
+#!/bin/bash
+
+# =======================================
+# metafun_test - MetaFun Pipeline Runner
+# =======================================
+
+# Base directories setup
+BASE_DIR="$(dirname $(dirname $(which "$0")))/share/metafun_test"
+NF_DIR="${BASE_DIR}/nf_scripts"
+CONFIG_DIR="${BASE_DIR}/config"
+DB_DIR="${BASE_DIR}/db"
+SCRIPTS_DIR="${BASE_DIR}/scripts"
+SIF_DIR="${BASE_DIR}/sif_images"
+
+# Set current working directory
+export LAUNCH_DIR="$(pwd)"
+
+# Error message output function
+error() {
+    echo "ERROR: $1" >&2
+    exit 1
+}
+
+# Usage information
+usage() {
+    cat << EOF
+Usage: $(basename "$0") -module <module_name> [options]
+
+Available modules:
+  RAWREAD_QC            : Quality control of raw reads
+    Required: -i <inputDir>
+    
+  ASSEMBLY_BINNING      : Assembly and binning
+    Optional: -i <inputDir> -o <outputDir> -p <processors>
+    
+  BIN_ASSESSMENT       : Assess genome quality
+    Required: -m <metadata> -c <accession_column>
+    
+  WMS_TAXONOMY         : Taxonomic analysis
+    Required: -i <inputDir> -m <metadata> -s <sampleIDcolumn> -a <analysiscolumn>
+    
+  WMS_FUNCTION         : Functional analysis
+    Required: -i <inputDir> -m <metadata> -s <sampleIDcolumn> -a <analysiscolumn>
+    
+  COMPARATIVE_ANNOTATION: Comparative genome annotation
+    Optional: -i <inputDir> -m <metadata> --samplecol <column> --metacol <column> -o <outputDir> -p <processors>
+    
+  INTERACTIVE_TAXONOMY : Interactive taxonomy analysis session
+    Optional: -i <inputDir> -o <outputDir> -p <processors>
+    
+  INTERACTIVE_COMPARATIVE: Interactive comparative analysis session
+    Optional: -i <inputDir> -o <outputDir> -m <metadata> -p <processors>
+    
+  DOWNLOAD_DB          : Download required databases
+    No additional options required
+    
+  GENOME_SELECTOR      : Genome selection interface
+    Optional: -f <input_file> (default: combined_medata.csv)
+
+Examples:
+  $(basename "$0") -module RAWREAD_QC -i input_reads/
+  $(basename "$0") -module BIN_ASSESSMENT -m metadata.txt -c 2
+  $(basename "$0") -module COMPARATIVE_ANNOTATION -i genomes/ -m metadata.csv --samplecol 1 --metacol 2
+  $(basename "$0") -module INTERACTIVE_TAXONOMY -i results/metagenome/WMS_TAXONOMY
+EOF
+}
+
+# Argument validation function
+validate_args() {
+    local module=$1
+    case "$module" in
+        RAWREAD_QC)
+            [ -z "$INPUT_DIR" ] && error "Input directory (-i) required for RAWREAD_QC"
+            [ ! -d "$INPUT_DIR" ] && error "Input directory does not exist: $INPUT_DIR"
+            ;;
+        BIN_ASSESSMENT)
+            [ -z "$METADATA" ] && error "Metadata file (-m) required for BIN_ASSESSMENT"
+            [ -z "$ACCESSION" ] && error "Accession column (-c) required for BIN_ASSESSMENT"
+            [ ! -f "$METADATA" ] && error "Metadata file does not exist: $METADATA"
+            ;;
+        WMS_TAXONOMY|WMS_FUNCTION)
+            [ -z "$INPUT_DIR" ] && error "Input directory (-i) required"
+            [ -z "$METADATA" ] && error "Metadata file (-m) required"
+            [ -z "$SAMPLE_ID" ] && error "Sample ID column (-s) required"
+            [ -z "$ANALYSIS" ] && error "Analysis column (-a) required"
+            [ ! -d "$INPUT_DIR" ] && error "Input directory does not exist: $INPUT_DIR"
+            [ ! -f "$METADATA" ] && error "Metadata file does not exist: $METADATA"
+            ;;
+    esac
+}
+
+# No arguments provided, show usage
+[ $# -eq 0 ] && { usage; exit 1; }
+
+# Initialize variables
+MODULE=""
+INPUT_DIR=""
+METADATA=""
+ACCESSION=""
+SAMPLE_ID=""
+SAMPLE_COL=""
+ANALYSIS=""
+META_COL=""
+FILE_INPUT="combined_medata.csv"
+PROCESSORS=""
+OUTPUT_DIR=""
+HELP_REQUESTED=false
+
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -module)
+            MODULE="$2"
+            shift 2 ;;
+        -h|--help)
+            HELP_REQUESTED=true
+            shift 1 ;;
+        -i|--inputDir)
+            INPUT_DIR="$2"
+            shift 2 ;;
+        -m|--metadata)
+            METADATA="$2"
+            shift 2 ;;
+        -c|--accession_column)
+            ACCESSION="$2"
+            shift 2 ;;
+        -s|--sampleIDcolumn)
+            SAMPLE_ID="$2"
+            shift 2 ;;
+        --samplecol)
+            SAMPLE_COL="$2"
+            shift 2 ;;
+        -a|--analysiscolumn)
+            ANALYSIS="$2"
+            shift 2 ;;
+        --metacol)
+            META_COL="$2"
+            shift 2 ;;
+        -f)
+            FILE_INPUT="$2"
+            shift 2 ;;
+        -p|--processors)
+            PROCESSORS="$2"
+            shift 2 ;;
+        -o|--output|--outdir)
+            OUTPUT_DIR="$2"
+            shift 2 ;;
+        -h|--help)
+            usage
+            exit 0 ;;
+        *)
+            error "Unknown parameter: $1" ;;
+    esac
+done
+
+
+
+
+
+display_logos() {
+    local module="$1"
+    local base_logo="${BASE_DIR}/help/logo.txt"
+    local module_logo=""
+    
+    # Determine logo file for each module
+    case "$module" in
+        "RAWREAD_QC")
+            module_logo="${BASE_DIR}/help/slant_logo_rawread_qc.txt"
+            ;;
+        "ASSEMBLY_BINNING")
+            module_logo="${BASE_DIR}/help/slant_logo_assembly_binning.txt"
+            ;;
+        "BIN_ASSESSMENT")
+            module_logo="${BASE_DIR}/help/slant_logo_bin_assessment.txt"
+            ;;
+        "WMS_TAXONOMY")
+            module_logo="${BASE_DIR}/help/slant_logo_wms_taxonomy.txt"
+            ;;
+        "WMS_FUNCTION")
+            module_logo="${BASE_DIR}/help/slant_logo_wms_function.txt"
+            ;;
+        "COMPARATIVE_ANNOTATION")
+            module_logo="${BASE_DIR}/help/slant_logo_comparative_annotation.txt"
+            ;;
+        "INTERACTIVE_TAXONOMY")
+            module_logo="${BASE_DIR}/help/slant_logo_imwt.txt"
+            ;;
+        "INTERACTIVE_COMPARATIVE")
+            module_logo="${BASE_DIR}/help/slant_logo_imca.txt"
+            ;;
+        "GENOME_SELECTOR")
+            module_logo="${BASE_DIR}/help/slant_logo_genome_selector.txt"
+            ;;
+    esac
+    if [ -f "$base_logo" ]; then
+        cat "$base_logo"
+    fi
+
+    if [ -f "$module_logo" ]; then
+        local color=$(MODULE_COLORS "$module")
+        echo -e "${color}$(cat "$module_logo")${RESET_COLOR}"
+    fi
+}
+
+
+
+# Define RGB colors for each module
+MODULE_COLORS() {
+    local module="$1"
+    case "$module" in
+        "RAWREAD_QC")            echo -e "\033[38;2;255;0;0m";;         # FF0000 (red)
+        "ASSEMBLY_BINNING")      echo -e "\033[38;2;255;147;0m";;       # FF9300 (orange)
+        "BIN_ASSESSMENT")        echo -e "\033[38;2;0;176;80m";;        # 00B050 (green)
+        "COMPARATIVE_ANNOTATION") echo -e "\033[38;2;78;149;217m";;     # 4E95D9 (blue)
+        "WMS_TAXONOMY")          echo -e "\033[38;2;8;70;250m";;        # 0846FA (dark blue)
+        "WMS_FUNCTION")          echo -e "\033[38;2;112;48;160m";;      # 7030A0 (purple)
+        "INTERACTIVE_COMPARATIVE") echo -e "\033[38;2;78;149;217m";;    #  COMPARATIVE_ANNOTATION 
+        "INTERACTIVE_TAXONOMY")   echo -e "\033[38;2;8;70;250m";;   
+        *)                       echo -e "\033[0m";;                    # default color
+    esac
+}
+RESET_COLOR="\033[0m"
+
+
+display_module_logo() {
+    local module="$1"
+    local slant_logo=""
+    local color=$(MODULE_COLORS "$module")
+    
+    # 메인 로고 먼저 표시
+    if [ -f "${BASE_DIR}/help/logo.txt" ]; then
+        echo -e "${color}$(cat "${BASE_DIR}/help/logo.txt")${RESET_COLOR}"
+        #cat "${BASE_DIR}/help/logo.txt"
+    fi
+    
+    # 모듈별 slant 로고 파일 결정
+    case "$module" in
+        "RAWREAD_QC")
+            slant_logo="${BASE_DIR}/help/slant_logo_rawread_qc.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'RAWREAD_QC')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "ASSEMBLY_BINNING")
+            slant_logo="${BASE_DIR}/help/slant_logo_assembly_binning.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'ASSEMBLY_BINNING')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "BIN_ASSESSMENT")
+            slant_logo="${BASE_DIR}/help/slant_logo_bin_assessment.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'BIN_ASSESSMENT')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "WMS_TAXONOMY")
+            slant_logo="${BASE_DIR}/help/slant_logo_wms_taxonomy.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'WMS_TAXONOMY')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "WMS_FUNCTION")
+            slant_logo="${BASE_DIR}/help/slant_logo_wms_function.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'WMS_FUNCTION')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "COMPARATIVE_ANNOTATION")
+            slant_logo="${BASE_DIR}/help/slant_logo_comparative_annotation.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'COMPARATIVE_ANNOTATION')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "INTERACTIVE_TAXONOMY")
+            slant_logo="${BASE_DIR}/help/slant_logo_imwt.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'INTERACTIVE_TAXONOMY')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "INTERACTIVE_COMPARATIVE")
+            slant_logo="${BASE_DIR}/help/slant_logo_imca.txt"
+            if [ -f "$slant_logo" ]; then
+                echo -e "$(MODULE_COLORS 'INTERACTIVE_COMPARATIVE')$(cat $slant_logo)${RESET_COLOR}"
+            fi
+            ;;
+        "GENOME_SELECTOR")
+            slant_logo="${BASE_DIR}/help/slant_logo_genome_selector.txt"
+            if [ -f "$slant_logo" ]; then
+                # GENOME_SELECTOR는 특수 처리: 16줄까지는 BIN_ASSESSMENT 색상, 나머지는 COMPARATIVE_ANNOTATION 색상
+                local green=$(MODULE_COLORS 'BIN_ASSESSMENT')
+                local blue=$(MODULE_COLORS 'COMPARATIVE_ANNOTATION')
+                awk -v green="$green" -v blue="$blue" -v reset="$RESET_COLOR" '{
+                    if (NR <= 6) {
+                        print green $0 reset;
+                    } else if (NR <= 12) {
+                        print blue $0 reset;
+                    } else {
+                        print reset $0;
+                    }
+                }' "$slant_logo"
+            fi
+            ;;
+    esac
+}
+
+
+if [ "$HELP_REQUESTED" = true ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    if [ -n "$MODULE" ]; then
+        module_lower=$(echo "$MODULE" | tr '[:upper:]' '[:lower:]')
+        help_file="${BASE_DIR}/help/${module_lower}.txt"
+        
+        # 로고 한 번만 표시
+        display_module_logo "$MODULE"
+        
+        if [ -f "$help_file" ]; then
+            sed -e "s|\${launch_dir}|${LAUNCH_DIR}|g" \
+                -e "s|\${outdir_Base}|${OUTPUT_DIR:-${LAUNCH_DIR}}|g" \
+                "$help_file" | while IFS= read -r line; do
+                echo -e "$line"
+            done
+            exit 0
+        else
+        echo "No detailed help available for module: $MODULE"
+            usage
+            exit 0
+        fi
+    else
+        # If no module is specified, display logo in default color
+        if [ -f "${BASE_DIR}/help/logo.txt" ]; then
+            cat "${BASE_DIR}/help/logo.txt"
+        fi
+        
+        if [ -f "${BASE_DIR}/help/general.txt" ]; then
+            sed -e "s|\${launch_dir}|${LAUNCH_DIR}|g" \
+                -e "s|\${outdir_Base}|${OUTPUT_DIR:-${LAUNCH_DIR}}|g" \
+                "${BASE_DIR}/help/general.txt" | while IFS= read -r line; do
+                echo -e "$line"
+            done
+        else
+            usage
+        fi
+        exit 0
+    fi
+
+
+# no module specified. print help 
+if [ -z "$MODULE" ]; then
+    # # Display logo if exists
+    # if [ -f "${BASE_DIR}/help/logo.txt" ]; then
+    #     cat "${BASE_DIR}/help/logo.txt"
+    # fi
+    display_logos "$MODULE"
+
+    echo "No module specified. Please select a module to run."
+    #echo
+    usage
+    exit 1
+fi
+
+
+# If SAMPLE_COL is provided but SAMPLE_ID isn't, use SAMPLE_COL value for both
+[ -z "$SAMPLE_ID" -a -n "$SAMPLE_COL" ] && SAMPLE_ID="$SAMPLE_COL"
+# If SAMPLE_ID is provided but SAMPLE_COL isn't, use SAMPLE_ID value for both
+[ -n "$SAMPLE_ID" -a -z "$SAMPLE_COL" ] && SAMPLE_COL="$SAMPLE_ID"
+
+# Validate arguments for the selected module
+validate_args "$MODULE"
+
+display_module_logo "$MODULE"
+
+# Run the appropriate module
+case "$MODULE" in
+    RAWREAD_QC)
+        nextflow run "${NF_DIR}/RAWREAD_QC_apptainer.nf" \
+            --inputDir "$INPUT_DIR"
+        ;;
+        
+    ASSEMBLY_BINNING)
+        NF_ARGS=""
+        [ -n "$INPUT_DIR" ] && NF_ARGS="$NF_ARGS --inputDir $INPUT_DIR"
+        [ -n "$OUTPUT_DIR" ] && NF_ARGS="$NF_ARGS --outdir $OUTPUT_DIR"
+        [ -n "$PROCESSORS" ] && NF_ARGS="$NF_ARGS --cpus $PROCESSORS"
+        
+        nextflow run "${NF_DIR}/ASSEMBLY_BINNING_apptainer.nf" $NF_ARGS
+        ;;
+        
+    BIN_ASSESSMENT)
+        nextflow run "${NF_DIR}/BIN_ASSESSMENT_apptainer.nf" \
+            --metadata "$METADATA" \
+            --accession_column "$ACCESSION"
+        ;;
+        
+    WMS_TAXONOMY)
+        nextflow run "${NF_DIR}/WMS_TAXONOMY_apptainer.nf" \
+            --inputDir "$INPUT_DIR" \
+            --metadata "$METADATA" \
+            --sampleIDcolumn "$SAMPLE_ID" \
+            --analysiscolumn "$ANALYSIS"
+        ;;
+        
+    WMS_FUNCTION)
+        nextflow run "${NF_DIR}/WMS_FUNCTION_apptainer.nf" \
+            --inputDir "$INPUT_DIR" \
+            --metadata "$METADATA" \
+            --sampleIDcolumn "$SAMPLE_ID" \
+            --analysiscolumn "$ANALYSIS"
+        ;;
+        
+    COMPARATIVE_ANNOTATION)
+        NF_ARGS=""
+        
+        # Add parameters if they exist
+        [ -n "$INPUT_DIR" ] && NF_ARGS="$NF_ARGS --inputDir $INPUT_DIR"
+        [ -n "$METADATA" ] && NF_ARGS="$NF_ARGS --metadata $METADATA"
+        [ -n "$SAMPLE_COL" ] && NF_ARGS="$NF_ARGS --samplecol $SAMPLE_COL"
+        [ -n "$META_COL" ] && NF_ARGS="$NF_ARGS --metacol $META_COL"
+        [ -n "$OUTPUT_DIR" ] && NF_ARGS="$NF_ARGS --outdir $OUTPUT_DIR"
+        [ -n "$PROCESSORS" ] && NF_ARGS="$NF_ARGS --cpus $PROCESSORS"
+        
+        echo "Running COMPARATIVE_ANNOTATION with arguments: $NF_ARGS"
+        nextflow run "${NF_DIR}/COMPARATIVE_ANNOTATION_apptainer.nf" $NF_ARGS
+        ;;
+    
+    INTERACTIVE_TAXONOMY)
+        # Set default values if not provided
+        if [ -z "$INPUT_DIR" ]; then
+            INPUT_DIR="results/metagenome/WMS_TAXONOMY"
+        fi
+        if [ -z "$OUTPUT_DIR" ]; then
+            OUTPUT_DIR="results/interactive_taxonomy"
+        fi
+        if [ -z "$PROCESSORS" ]; then
+            PROCESSORS=4
+        fi
+        
+        # Ensure INPUT_DIR exists
+        if [ ! -d "$INPUT_DIR" ]; then
+            error "Input directory does not exist: $INPUT_DIR"
+        fi
+        
+        # Create output directory
+        mkdir -p "$OUTPUT_DIR"
+        
+        # Get absolute paths for binding
+        ABS_INPUT_DIR=$(realpath "$INPUT_DIR")
+        ABS_OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
+        
+        echo "Starting interactive taxonomy analysis..."
+        echo "Input directory: $ABS_INPUT_DIR"
+        echo "Output directory: $ABS_OUTPUT_DIR"
+        
+        # Run with proper binding
+        apptainer exec \
+            -B "$ABS_INPUT_DIR:/data" \
+            -B "$ABS_OUTPUT_DIR:/output" \
+            "${SIF_DIR}/interactive_wms_taxonomy_v01.sif" \
+            Rscript "/scratch/tools/microbiome_analysis/interactive_WMS_TAXONOMY/app.R"
+        ;;
+        
+    INTERACTIVE_COMPARATIVE)
+        # Set default input directory if not provided
+        if [ -z "$INPUT_DIR" ]; then
+            # Try to find the most recent COMPARATIVE_ANNOTATION result
+            INPUT_DIR=$(find results/metagenome/COMPARATIVE_ANNOTATION -type d -name "20*" | sort -r | head -n 1)
+            if [ -z "$INPUT_DIR" ]; then
+                error "No COMPARATIVE_ANNOTATION results found. Please specify input directory with -i"
+            fi
+            echo "Using most recent COMPARATIVE_ANNOTATION result: $INPUT_DIR"
+        fi
+        
+        # Set defaults for other parameters
+        if [ -z "$OUTPUT_DIR" ]; then
+            OUTPUT_DIR="results/interactive_comparative"
+        fi
+
+
+
+        if [ -z "$PROCESSORS" ]; then
+            PROCESSORS=4
+        fi
+        
+        # Ensure INPUT_DIR exists
+        if [ ! -d "$INPUT_DIR" ]; then
+            error "Input directory does not exist: $INPUT_DIR"
+        fi
+        
+        # Create output directory
+        mkdir -p "$OUTPUT_DIR"
+        
+        # Get absolute paths for binding
+        ABS_INPUT_DIR=$(realpath "$INPUT_DIR")
+        ABS_OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
+        ABS_METADATA=""
+        if [ -n "$METADATA" ]; then
+            if [ ! -f "$METADATA" ]; then
+                error "Metadata file does not exist: $METADATA"
+            fi
+            ABS_METADATA=$(realpath "$METADATA")
+        fi
+        
+        echo "Starting interactive comparative analysis..."
+        echo "Input directory: $ABS_INPUT_DIR"
+        echo "Output directory: $ABS_OUTPUT_DIR"
+        if [ -n "$METADATA" ]; then
+            echo "Metadata file: $ABS_METADATA"
+        fi
+        
+        # Build command arguments
+        APP_ARGS="--input /data --output /output --processors $PROCESSORS"
+        if [ -n "$METADATA" ]; then
+            APP_ARGS="$APP_ARGS --metadata /metadata.csv"
+        fi
+        
+        # Run with proper binding
+        BIND_ARGS="-B $ABS_INPUT_DIR:/data -B $ABS_OUTPUT_DIR:/output"
+        if [ -n "$METADATA" ]; then
+            BIND_ARGS="$BIND_ARGS -B $ABS_METADATA:/metadata.csv"
+        fi
+        
+        apptainer exec $BIND_ARGS \
+            "${SIF_DIR}/interactive_comparative_annotation_v01.sif" \
+            Rscript "/scratch/tools/microbiome_analysis/comparative_annotation/shiny_COMPARATIVE_ANNOTATION.R" $APP_ARGS
+        ;;
+        
+    DOWNLOAD_DB)
+        echo "=== Database Download Tool ==="
+        echo "This will download all required databases and SIF images for metafun_test"
+        echo "Files will be downloaded to the conda package installation directory:"
+        echo "  Databases: ${DB_DIR}"
+        echo "  SIF images: ${SIF_DIR}"
+        echo ""
+        if [ ! -w "$DB_DIR" ] || [ ! -w "$SIF_DIR" ]; then
+            echo "ERROR: No write permission to conda package directories."
+            echo "You may need to run this command with sudo or contact your system administrator."
+            exit 1
+        fi
+        echo ""
+        echo "Starting download..."
+        echo "Databases will be downloaded to: ${DB_DIR}"
+        echo "SIF images will be downloaded to: ${SIF_DIR}"
+        echo ""
+
+        python "${DB_DIR}/download_db_metafun.py" --db-dir "$DB_DIR" --sif-dir "$SIF_DIR"
+
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "Download completed successfully!"
+            echo "These databases will be automatically used by metafun_test modules."
+        else
+            echo ""
+            echo "ERROR: Database download encountered issues."
+            echo "Please check the error messages above."
+            exit 1
+        fi
+
+
+        ;;
+        
+    GENOME_SELECTOR)
+        python "${SCRIPTS_DIR}/dash_MAG2.py" -i "$FILE_INPUT"
+        ;;
+        
+    *)
+        error "Unknown module: $MODULE"
+        ;;
+esac
+

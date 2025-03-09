@@ -1,0 +1,125 @@
+\033[1;38;2;255;149;0mINTERACTIVE_\033[38;2;78;149;217mCOMPARATIVE\033[0m
+
+Usage : 
+    metafun_test -module INTERACTIVE_COMPARATIVE -i "${comparative_annotation_results}" -m "${metadata_file}" -o "${output_dir}" -p <port>
+
+\033[1;38;2;255;149;0mINTERACTIVE_\033[38;2;78;149;217mCOMPARATIVE\033[0m : Interactive visualization and analysis of \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m results
+=========================================================
+\033[1m1. Heatmap\033[0m
+   - Gene Presence/Absence Heatmap: Visualize annotation results as heatmaps
+   - Multiple Database Support: CARD, dbCAN, KEGG, VFDB, ANI data visualization
+   - Metadata Integration: Color and cluster genomes by any metadata variable
+
+\033[1m2. Metadata Viewer\033[0m
+   - Distribution Plots: Visualize metadata distribution across genomes
+   - Interactive Tables: Explore metadata with color-coded visualization
+   - Quick Filtering: Subset genomes based on metadata values
+
+\033[1m3. Annotation Result Table\033[0m
+   - Detailed View: Examine individual annotation results for each genome
+   - Searchable Interface: Find specific genes or functions of interest
+   - Export Options: Download filtered results for further analysis
+
+\033[1m4. Genome PCoA\033[0m
+   - Distance Visualization: Gene presence/absence-based genome clustering
+   - PERMANOVA Analysis: Statistical testing of metadata correlation with genome similarity
+   - Interactive Plot: Color and shape points by different metadata variables
+
+\033[1m5. Association Analyzer\033[0m
+   - Numerical Analysis: Pyseer-powered gene-trait association studies
+   - Categorical Analysis: Fisher's exact test for category-based associations
+   - Visual Results: Manhattan plots and other visualizations of statistical significance
+
+\033[1m6. Gene Function Explorer\033[0m
+   - Functional Annotation: Explore gene functions by Gene ID
+   - Cross-Database Information: View annotations from multiple reference databases
+   - Context Visualization: Understand gene function in genomic context
+
+\033[1m7. Sequence Family Finder\033[0m
+   - Sequence Retrieval: Obtain nucleotide and amino acid sequences for gene families
+   - Multiple Sequence Alignment: Compare sequences across different genomes
+   - Export Options: Download sequences in FASTA format
+
+\033[1m8. Gene Tree Generator\033[0m
+   - Phylogenetic Analysis: Generate trees from nucleotide or amino acid sequences
+   - Tree Visualization: Interactive display of gene evolutionary relationships
+   - Annotation Integration: Color and annotate tree leaves with metadata
+
+This module provides a comprehensive web interface to explore and analyze comparative 
+genome annotation results with interactive visualizations and statistical tools.
+
+\033[1mWe recommend you to use visual studio code with Remote - SSH to run this module.\033[0m
+ https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh
+
+
+\033[1;31mRequired Parameters:\033[0m 
+------------------
+\033[31m-i, --input\033[0m          : Input directory with COMPARATIVE_ANNOTATION results
+                     (If not specified, the most recent results will be used)
+
+\033[1;33mOptional Parameters:\033[0m 
+------------------
+\033[33m-m, --metadata\033[0m       : Additional metadata file in CSV format
+\033[33m-o, --output\033[0m         : Output directory for exported files (default: results/interactive_comparative)
+\033[33m-p, --processors\033[0m     : Number of CPU cores to use (default: 4)
+
+
+\033[1;38;2;0;255;255mCommand Example:\033[0m
+-----------------
+    metafun_test -module INTERACTIVE_COMPARATIVE -i results/metagenome/COMPARATIVE_ANNOTATION/20250302164408/ -m metadataBU69.csv -o results/interactive_comparative
+
+\033[1;38;2;0;255;255mInternal Command:\033[0m
+-----------------
+    apptainer exec -B <input_dir>:/data -B <output_dir>:/output -B <metadata_file>:/metadata.csv \\
+    "${SIF_DIR}/interactive_comparative_annotation_v01.sif" \\
+    Rscript "/scratch/tools/microbiome_analysis/comparative_annotation/shiny_COMPARATIVE_ANNOTATION.R" \\
+    --input /data --metadata /metadata.csv --output /output --processors <cpus>
+
+
+\033[1;38;2;0;255;255mUsage Instructions:\033[0m
+-----------------
+1. Heatmap Analysis
+   - Select heatmap type (CARD, dbCAN, KEGG, VFDB, ANI)
+   - Choose data type (gene presence/absence, coverage, etc.)
+   - Select metadata column for visualization
+   - Click "Generate Heatmap" to create interactive visualization
+   - Use clustering options to group similar genomes
+
+2. Metadata Exploration
+   - View distribution of metadata across all genomes
+   - Filter genomes based on specific metadata values
+   - Export filtered metadata for further analysis
+
+3. Annotation Result Table
+   - Examine individual annotation results for each genome
+   - Search for specific genes or functions of interest
+   - Download filtered results for further analysis
+
+4. Genome PCoA
+   - Visualize genome clustering based on gene presence/absence
+   - Perform PERMANOVA analysis to test correlation with metadata
+   - Color and shape points by different metadata variables
+
+5. Association Analysis
+   - For numerical traits: Use Pyseer-based association analysis
+   - For categorical traits: Use Fisher's exact test
+   - Explore statistically significant associations with interactive plots
+
+6. Gene Function Explorer
+   - Search for specific Gene IDs to explore their functions
+   - View annotations from multiple reference databases
+   - Understand gene function in genomic context
+
+7. Sequence Family Finder
+   - Retrieve nucleotide and amino acid sequences for gene families
+   - Compare sequences across different genomes
+   - Download sequences in FASTA format
+
+8. Gene Tree Generator
+   - Generate phylogenetic trees from nucleotide or amino acid sequences
+   - View gene evolutionary relationships interactively
+   - Color and annotate tree leaves with metadata
+
+
+\033[38;2;180;180;180mNote:\033[0m This module requires results from \033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m.
+All visualizations can be exported as publication-ready figures.
