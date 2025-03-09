@@ -1,0 +1,99 @@
+#!/bin/bash
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011: 919> /data1/leehg/miniconda3/envs/build_env/bin/conda build --no-test ./
+WARNING: No numpy version specified in conda_build_config.yaml.  Falling back to default numpy value of 1.23
+Adding in variants from internal_defaults
+Attempting to finalize metadata for metafun
+Collecting package metadata (repodata.json): ...working... done
+Solving environment: ...working... done
+Collecting package metadata (repodata.json): ...working... done
+Solving environment: ...working... done
+BUILD START: ['metafun-0.1.1-py312_0.tar.bz2']
+Collecting package metadata (repodata.json): ...working... done
+Solving environment: ...working... done
+
+## Package Plan ##
+
+  environment location: /data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeho
+
+
+The following NEW packages will be INSTALLED:
+
+    _libgcc_mutex:    0.1-conda_forge           conda-forge
+    _openmp_mutex:    4.5-2_gnu                 conda-forge
+    bzip2:            1.0.8-h4bc722e_7          conda-forge
+    ca-certificates:  2025.1.31-hbcca054_0      conda-forge
+    ld_impl_linux-64: 2.43-h712a8e2_4           conda-forge
+    libexpat:         2.6.4-h5888daf_0          conda-forge
+    libffi:           3.4.6-h2dba641_0          conda-forge
+    libgcc:           14.2.0-h767d61c_2         conda-forge
+    libgcc-ng:        14.2.0-h69a702a_2         conda-forge
+    libgomp:          14.2.0-h767d61c_2         conda-forge
+    liblzma:          5.6.4-hb9d3cd8_0          conda-forge
+    libnsl:           2.0.1-hd590300_0          conda-forge
+    libsqlite:        3.49.1-hee588c1_1         conda-forge
+    libuuid:          2.38.1-h0b41bf4_0         conda-forge
+    libxcrypt:        4.4.36-hd590300_1         conda-forge
+    libzlib:          1.3.1-hb9d3cd8_2          conda-forge
+    ncurses:          6.5-h2d0b736_3            conda-forge
+    openssl:          3.4.1-h7b32b05_0          conda-forge
+    pip:              25.0.1-pyh8b19718_0       conda-forge
+    python:           3.12.9-h9e4cc4f_1_cpython conda-forge
+    readline:         8.2-h8c095d6_2            conda-forge
+    setuptools:       75.8.2-pyhff2d567_0       conda-forge
+    tk:               8.6.13-noxft_h4845f30_101 conda-forge
+    tzdata:           2025a-h78e105d_0          conda-forge
+    wheel:            0.45.1-pyhd8ed1ab_1       conda-forge
+
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
+Copying /data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011 to /data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/work/
+source tree in: /data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/work
+export PREFIX=/data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeho
+export BUILD_PREFIX=/data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/_build_env
+export SRC_DIR=/data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/work
+
+Resource usage statistics from building metafun:
+   Process count: 2
+   CPU time: Sys=-, User=0:00:00.0
+   Memory: 11.0M
+   Disk usage: 49.2K
+   Time elapsed: 0:00:02.0
+
+
+Packaging metafun
+Packaging metafun-0.1.1-py312_0
+compiling .pyc files...
+number of files: 93
+Fixing permissions
+INFO :: Time taken to mark (prefix)
+        0 replacements in 0 files was 0.04 seconds
+WARNING: Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+Renaming work directory '/data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/work' to '/data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/work_moved_metafun-0.1.1-py311_0_linux-64_main_build_loop'
+shutil.move(work)=/data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/work, dest=/data1/leehg/miniconda3/envs/build_env/conda-bld/metafun_1741517124582/work_moved_metafun-0.1.1-py311_0_linux-64_main_build_loop)
+# Automatic uploading is disabled
+# If you want to upload package(s) to anaconda.org later, type:
+
+
+# To have conda build upload to anaconda.org automatically, use
+# conda config --set anaconda_upload yes
+anaconda upload \
+    /data1/leehg/miniconda3/envs/build_env/conda-bld/linux-64/metafun-0.1.1-py312_0.tar.bz2
+anaconda_upload is not set.  Not uploading wheels: []
+
+INFO :: The inputs making up the hashes for the built packages are as follows:
+{
+  "metafun-0.1.1-py312_0.tar.bz2": {
+    "recipe": {}
+  }
+}
+
+
+####################################################################################
+Resource usage summary:
+
+Total time: 0:04:41.2
+CPU usage: sys=0:00:00.0, user=0:00:00.0
+Maximum memory usage observed: 11.0M
+Total disk usage observed (not including envs): 49.2K
+

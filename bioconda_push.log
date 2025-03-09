@@ -1,0 +1,12 @@
+
+#!/bin/bash
+
+
+#anaconda upload
+
+#bioconda setup . 
+# create local clone of forked bioconda 
+(build_env) leehg@03.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/meta
+fun_test: 482> git clone git@github.com:aababc1/bioconda-recipes.git
+
+

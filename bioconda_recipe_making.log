@@ -1,0 +1,5 @@
+#!/bin/bash
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_test: 756> wget https://github.com/aababc1/metaFun/archive/refs/tags/v0.1.0.tar.gz
+
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_test: 759> sha256sum v0.1.0.tar.gz 
+5585165fd86b6e14648ac3419a32778b65ca7a350a1dacadd7448ae59b488181  v0.1.0.tar.gz

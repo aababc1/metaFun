@@ -1,0 +1,82 @@
+
+\033[1;38;2;0;176;80mBIN_ASSESSMENT \033[0m
+
+Usage :
+    metafun -module BIN_ASSESSMENT --inputDir "${your_read_directory}" --metadata "${your metadata}" --accession_column "${your accessioncolumn}"
+\033[38;2;0;176;80mBIN_ASSESSMENT : assess genome quality and assign taxonomy\033[0m
+=========================================================
+ \033[32mCheckM2\033[0m            : No option, database 1.0.2
+ \x1b[32mCheckM2\x1b[0m            : No option, database 1.0.2
+ \033[32mGUNC\033[0m               : No option, database progenomes2.1 diamond
+ \033[32mGTDB\033[0m               : r220 version
+
+This module assesses genome quality and assigns taxonomy to the genomes.
+
+\033[1;31mRequired Parameters:\033[0m 
+------------------
+\033[31m--metadata\033[0m         : Path to metadata file
+                     Required for genome metadata assignment.  Several metrics are calculated here assigned to genomes based on the metadata.
+
+\033[31m--accession_column\033[0m : Column index in metadata matching genome filenames
+                     (e.g., column containing accession numbers of metadata. designated number of column)
+                    If second column contains accession numbers, use '--accession_column 2'.
+
+Optional Parameters:
+------------------
+\033[33m--pass_quality\033[0m     : Quality filter for selecting genomes for GTDB-Tk analysis
+                     Available options:
+                     \033[32mmedium_quality.pass\033[0m      : Completeness ≥ 50%, Contamination < 10%
+                     \033[32mhigh_quality.pass\033[0m       : Completeness > 90%, Contamination < 5%
+                     \033[32mmedium_quality_gunc.pass\033[0m : medium_quality + GUNC pass
+                     \033[32mhigh_quality_gunc.pass\033[0m  : high_quality + GUNC pass
+                     \033[32mQS50.pass\033[0m               : QS50 score ≥ 50 (default)
+                     \033[32mQS50_gunc.pass\033[0m          : QS50 pass + GUNC pass
+                     \033[32mall\033[0m                     : No quality filtering
+        
+                     Default pass_quality is QS50.pass
+                    
+\033[33m--inputDir\033[0m        : Input directory containing genome bins 
+                                                         (default: ${launch_dir}/results/metagenome/ASSEMBLY_BINNING/final_bins )
+                                                         (This is generated in ASSEMBLY_BINNING module without output folder selection)
+                                                            Files must have .fa, .fna, or .fasta extension
+
+\033[33m--outdir_Base\033[0m     : Base output directory (default: ${launch_dir})
+                     Final output will be in: ${outdir_Base}/results/metagenome/BIN_ASSESSMENT
+
+\033[33m--cpus\033[0m             : Number of CPUs to use (default: 20)
+
+
+\033[33m--data_type\033[0m       : Type of input data (default: 'MAG')
+
+\033[33m--run_id\033[0m          : Custom run identifier 
+                     (default: timestamp_workflowName format)
+
+
+\033[38;2;0;255;255mOutput File Description:\033[0m
+-----------
+\033[38;2;0;255;255m- quality_taxonomy_combined_[TIMESTAMP].csv\033[0m : Combined quality and taxonomy information
+\033[38;2;0;255;255m- bins_quality_passed/\033[0m                     : Directory containing genomes passing quality filter using --pass_quality option
+                                                            These bins will be used in \033[31mGenome Selector\033[0m
+\033[38;2;0;255;255m- checkm2_[RUN_ID]/ \033[0m                   : CheckM2 quality assessment results
+\033[38;2;0;255;255m- gunc_[RUN_ID]/ \033[0m                      : GUNC contamination assessment results
+\033[38;2;0;255;255m- gtdb_outdir_[RUN_ID]/ \033[0m              : GTDB-Tk taxonomy classification results
+
+Note: Selected quality filter (--pass_quality) determines which genomes will be 
+      available for downstream analysis in \033[31mCOMPARATIVE_ANNOTATION\033[0m
+
+
+\033[1;36mSelected Parameters:\033[0m
+------------------
+\033[33mMetadata File:\033[0m      %METADATA%
+\033[33mAccession Column:\033[0m   %ACCESSION_COLUMN%
+\033[33mInput Directory:\033[0m    %INPUT_DIR%
+\033[33mQuality Filter:\033[0m     %PASS_QUALITY%
+\033[33mData Type:\033[0m          %DATA_TYPE%
+\033[33mRun ID:\033[0m             %RUN_ID%
+\033[33mCPUs Used:\033[0m          %CPUS%
+\033[33mOutput Directory:\033[0m   %OUTPUT_DIR%
+
+
+\033[38;2;180;180;180mNote:\033[0m Genomes from this module will be used in: 
+GENOME_SELECTOR
+\033[38;2;78;149;217mCOMPARATIVE_ANNOTATION\033[0m 
