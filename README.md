@@ -7,6 +7,7 @@ Refer this documentation to use metaFun: [metaFun documentation](https://metafun
 
 ## Install 
 $ conda create -n metafun bioconda::metafun 
+
 $ metafun -module DOWNLOAD_DB 
 
 You are ready to use metaFun. Have much a fun :)
