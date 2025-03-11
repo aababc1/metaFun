@@ -10,4 +10,4 @@ $ conda create -n metafun bioconda::metafun
 
 $ metafun -module DOWNLOAD_DB 
 
-You are ready to use metaFun. Have much a fun :)
+### You are ready to use metaFun. Have much a fun :)
