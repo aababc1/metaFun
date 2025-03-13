@@ -103,7 +103,9 @@ for col in permanova_columns:
     print(f"Column '{col}' had {na_count} NA values removed.")
 
     # Check if there are enough samples left after NA removal
-    if cleaned_data[col].nunique() > 1:
+    if cleaned_data[col].nunique() > 1 and len(cleaned_data) >= 5:  # 최소 5개 샘플 필요
+
+#    if cleaned_data[col].nunique() > 1:
         # Ensure distance matrix and cleaned_data have matching IDs
         valid_ids = cleaned_data['sample_id'].values
         bray_dm_subset = bray_dm.filter(valid_ids)
@@ -116,9 +118,13 @@ for col in permanova_columns:
             result['R²'] = r2
             permanova_results[col] = result
         except ValueError as e:
+            print(f"Error in PERMANOVA for {col}: {e}")
             print(f"Skipping {col} due to error: {e}")
     else:
-        print(f"Skipping {col} due to insufficient unique values after NA removal.")
+        if cleaned_data[col].nunique() <= 1:
+            print(f"Skipping {col} due to insufficient unique values after NA removal.")
+        else:
+            print(f"Skipping {col} due to insufficient samples (only {len(cleaned_data)} samples available, minimum 5 required).")        
 
 # Create dropdown menu for PERMANOVA results
 # def create_hover_text(df):
@@ -335,7 +341,7 @@ metadata_columns = permanova_columns[21:]
 buttons = []
 for col in genome_data_columns:
     buttons.append(dict(
-        label=f"Genome Data: {col}",
+        label=f"{col}",
         method="update",
         args=[{
             "visible": [trace.name.startswith(f"{col}:") or trace.name == col for trace in pcoa_fig.data],
@@ -348,7 +354,7 @@ for col in genome_data_columns:
 # Metadata 버튼
 for col in metadata_columns:
     buttons.append(dict(
-        label=f"Metadata: {col}",
+        label=f"{col}",
         method="update",
         args=[{
             "visible": [trace.name.startswith(f"{col}:") or trace.name == col for trace in pcoa_fig.data],
@@ -378,11 +384,20 @@ link_annotation = go.layout.Annotation(
     showarrow=False, font=dict(size=14), bgcolor="white", opacity=0.8
 )
 
+annotation = None  
+
 # Add initial PERMANOVA result as annotation if available
 if initial_col in permanova_results:
     annotation = go.layout.Annotation(
         x=0.1, y=0.1, xref="paper", yref="paper", xanchor="left", yanchor="top",
         text=f"<span style='color:blue;'>{initial_col} : PERMANOVA stats: F={permanova_results[initial_col]['test statistic']:.3f}, R²={permanova_results[initial_col]['R²']:.3f}, p={permanova_results[initial_col]['p-value']:.3f}</span>",
+        showarrow=False, font=dict(size=12), bgcolor="white", opacity=0.8
+    )
+
+else:
+    annotation = go.layout.Annotation(
+        x=0.1, y=0.1, xref="paper", yref="paper", xanchor="left", yanchor="top",
+        text=f"<span style='color:red;'>{initial_col} : PERMANOVA skipped - insufficient data</span>",
         showarrow=False, font=dict(size=12), bgcolor="white", opacity=0.8
     )
 
@@ -407,7 +422,9 @@ dropdown_annotations = [
     )
 ]
 
-
+# annotations_list = [link_annotation]
+# if permanova_annotation:
+#     annotations_list.append(permanova_annotation)
 
 pcoa_fig.update_layout(
     title=f'PCoA based on Bray-Curtis Distance',

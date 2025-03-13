@@ -44,21 +44,21 @@ params.visualization_results = "${params.outdir}/visualization_results"
 params.annotation_results =  "${params.outdir}/annotation_results" 
 //params.gene_matrix = null // gene_PA or gene_count
 
-def logo_file = file("${workflow.projectDir}/../scripts/logo.txt")
-//def logo_file = file('logo.txt')
-if (logo_file.exists()) {
-    custom_logo = logo_file.text
-    println(custom_logo)
-} else {
-    custom_logo = "Where is the face of metaFun?? :l"
-    println(custom_logo)
-}
-println("\nVisit documentation to find out description of this workflow: \n")
-println("https://metafun-doc.readthedocs.io/en/latest/workflows/COMPARATIVE_ANNOTATION.html\n")
+// def logo_file = file("${workflow.projectDir}/../scripts/logo.txt")
+// //def logo_file = file('logo.txt')
+// if (logo_file.exists()) {
+//     custom_logo = logo_file.text
+//     println(custom_logo)
+// } else {
+//     custom_logo = "Where is the face of metaFun?? :l"
+//     println(custom_logo)
+// }
+// println("\nVisit documentation to find out description of this workflow: \n")
+// println("https://metafun-doc.readthedocs.io/en/latest/workflows/COMPARATIVE_ANNOTATION.html\n")
 
-def checkProcessOutput(String outputPath) {
-    return file(outputPath).exists()
-}
+// def checkProcessOutput(String outputPath) {
+//     return file(outputPath).exists()
+// }
 
 
 // def determineRunMode() {
@@ -142,14 +142,11 @@ if (params.metacol == null || params.metacol == "" || params.metacol.toInteger()
 if (!new File(params.inputDir).exists()) {
     error """Input directory does not exist: ${params.inputDir}.\n
     Please specify a valid directory with --inputDir.\n
-    
-    You would select your genomes with genome metadata file and script \n   : select_genomes_toCOMPARATIVE_ANNOTATION.sh. \n
-    
-    Your combined_metadata.csv   could be generated using python script.
+        
+    Your combined_metadata_yourtime.csv   could be generated using metafun -module GENOME_SELECTOR using results from BIN_ASSESSMENT.
     Suppose second column of ### metageome_metadata.csv ### is WMS accession ID extracted from paired end metagenome file name 
-    python combine_metadata_WMS_genome.py -g  quality_taxonomy_combined.csv -m metageome_metadata.csv -o combined_metadata.csv -a 2
+    
 
-    sh select_genomes_toCOMPARATIVE_ANNOTATION.sh \"s__Bacteroides uniformis\"
 
     You need to also provide metadata to program if you do not want to use select_genomes_toCOMPARATIVE_ANNOTATION.sh
 """
@@ -1189,6 +1186,18 @@ workflow{
     //run_rgi_CARD(panaroo_result,metadata_ch)
 }
 */
+process countGenomes {
+    input:
+    path(genomes_dir)
+    
+    output:
+    stdout emit: count
+    
+    script:
+    """
+    find "${genomes_dir}" -name "*.fa" | wc -l
+    """
+}
 
 process create_shiny_dashboard {
     publishDir "${params.outdir}/shiny_dashboard", mode: 'copy'
@@ -1294,6 +1303,7 @@ workflow {
     input_dir_ch = Channel.fromPath(params.inputDir)
 
     selected_genomes = prepare_genomes(metadata_ch, input_dir_ch)
+
 
     def runProkka = !file("${params.outdir}/prokka").exists()
     def runPpanggolin = !file("${params.outdir}/ppanggolin_result").exists()
@@ -1416,18 +1426,36 @@ workflow {
         sequence_db = Channel.fromPath("${params.outdir}/sequence_db/sequences.h5")
     }
     
-    def genomeCount = new File("selected_genomes${params.run_name}").exists() ? new File("selected_genomes${params.run_name}").listFiles().size() : 0
+    //def genomeCount = new File("selected_genomes${params.run_name}").exists() ? new File("selected_genomes${params.run_name}").listFiles().size() : 0
+    // genomeCount = countGenomes(selected_genomes).map{ it.trim().toInteger() }
 
-    if (runGenePACluster) {
-        if (genomeCount >= 5) {
-            run_genePA_cluster(ppanggolin_result, metadata_ch)
-        } else {
-            log.info "Genome count is less than 5. GenePA Cluster will not be run."
-        }
+    // selected_genomes
+    //     .map { dir -> file("${dir}/*.fa").size() }  
+    //     .set { genome_count }
 
-    } else {
-        log.info "GenePA Cluster already exists."
-    }
+//fileCount = selected_genomes.flatMap { dir -> file("${dir}/*.fa") }.count()
+
+
+// genome_count_ch = selected_genomes
+//     .flatMap { dir -> file("${dir}/*.fa") }
+//     .count()
+
+
+//fileCount = selected_genomes.flatMap { dir -> file("${dir}/*.fa") }.count()
+
+if (runGenePACluster) {
+    //if (fileCount >= 5) {
+  //      log.info "Running GenePA Cluster with ${fileCount} genomes"
+        run_genePA_cluster(ppanggolin_result, metadata_ch)
+    //} else {
+    //    log.info "Genome count (${fileCount}) is less than 5. GenePA Cluster will not be run."
+    //}
+} else {
+    log.info "GenePA Cluster already exists."
+}
+
+
+    
      if (runDrep) {
          all_genomes = selected_genomes.flatMap { dir -> file("${dir}/*.fa") }.collect()
          drep_result = run_drep_dereplication(all_genomes)

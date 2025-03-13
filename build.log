@@ -97,3 +97,26 @@ CPU usage: sys=0:00:00.0, user=0:00:00.0
 Maximum memory usage observed: 11.0M
 Total disk usage observed (not including envs): 49.2K
 
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011: 930> git commit -m "metafun v011 
+commit"
+On branch master
+nothing to commit, working tree clean
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011: 931> git remote add origin git@github.com:aababc1/metaFun.git
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011: 932> git branch -M master
+
+
+
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011: 935> git checkout -b metafun-v0.1.1
+Switched to a new branch 'metafun-v0.1.1'
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011: 936> git push -u origin metafun-v0.1.1
+
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011: 939> git tag -a v0.1.1 -m "metaFun release version 0.1.1"
+(build_env) leehg@09.03.2025 gem4:/data2/leehg/OMD3/metafun/metaFun/conda_package_build/metafun/metafun_v011: 940> git push origin v0.1.1
+Enumerating objects: 1, done.
+Counting objects: 100% (1/1), done.
+Writing objects: 100% (1/1), 175 bytes | 175.00 KiB/s, done.
+Total 1 (delta 0), reused 0 (delta 0), pack-reused 0
+To github.com:aababc1/metaFun.git
+ * [new tag]         v0.1.1 -> v0.1.1
+
+

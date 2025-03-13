@@ -203,13 +203,14 @@ row_annotation_hover <- HeatmapAnnotation(
 
 
 print(row_annotation)
-print("error?")
-print(summary(heatmap_data_summarized[,8:ncol(heatmap_data_summarized)]))
 
-vfdb_matrix<- heatmap_data_summarized[,8:(ncol(heatmap_data_summarized) -5)]
+#print(summary(heatmap_data_summarized[,8:ncol(heatmap_data_summarized)]))
 
-print("Whatthe?")
+#vfdb_matrix<- heatmap_data_summarized[,8:(ncol(heatmap_data_summarized) -5)]
 
+vfdb_matrix <- as.matrix(heatmap_data_summarized[,8:(ncol(heatmap_data_summarized)-5)])
+print("Matrix dimensions:")
+print(dim(vfdb_matrix))
 
 
 #asdasdasd
@@ -240,7 +241,7 @@ print("Whatthe?4")
 
 print(vfdb_matrix[(nrow(vfdb_matrix) - 5):nrow(vfdb_matrix), (ncol(vfdb_matrix) - 5):ncol(vfdb_matrix)])
 
-print(vfdb_matrix[1:3,1:12])
+#print(vfdb_matrix[1:3,1:12])
 
 top_annotation_boxplot <- HeatmapAnnotation(Average_value = anno_boxplot(as.matrix(vfdb_matrix), axis = TRUE, height = unit(1.0, "cm"),
                                axis_param = list(labels_rot = 0)),

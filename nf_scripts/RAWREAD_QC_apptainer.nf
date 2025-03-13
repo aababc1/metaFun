@@ -66,7 +66,7 @@ Optional Parameters:
 \033[33m--custom_index\033[0m     : Path to custom genome index for filtering
                      Used only when --filter=custom
 \033[33m--outdir\033[0m           : Output directory 
-                     (default: ${launch_dir}/results/metagenome/RAWREAD_QC)
+                     (default: ${launchDir}/results/metagenome/RAWREAD_QC)
 \033[33m--cpus\033[0m             : Number of CPUs to use (default: 4)
 
 
