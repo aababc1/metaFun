@@ -1,5 +1,4 @@
 import os
-import glob
 import hashlib
 import json
 import tarfile
@@ -256,118 +255,52 @@ def fallback_extract_tar_gz(file_path, output_dir):
 
 
 
+
+
 def merge_kraken2_parts(output_dir, hash_dict):
-    """Merge Kraken2 part files into a single archive and extract it"""
-    # 크라켄 부분 파일 식별 (part_aa, part_ab, 등)
-    part_files = sorted([f for f in os.listdir(output_dir) 
-                 if f.startswith("kraken2_GTDBr220_part_")])
+    kraken2_parts = [filename for filename in hash_dict.keys() if filename.startswith("kraken2_") and not is_tar_gz(filename)]
     
-    if len(part_files) < 4:
-        print(f"Cannot merge Kraken2 parts: Found only {len(part_files)} of 4 required parts")
-        return False
-    
-    # 이미 검증된 파일을 다시 검증하지 않기 위해 extracted_files 로드
-    extracted_files = load_extraction_record(output_dir)
-    
-    # 모든 부분 파일 존재하는지 확인
-    for part in part_files:
-        part_path = os.path.join(output_dir, part)
-        if not os.path.exists(part_path):
-            print(f"Missing Kraken2 part: {part}")
-            return False
-    
-    # 병합 파일 경로와 해시 키 설정 (대소문자 주의)
-    merged_filename = os.path.join(output_dir, "kraken2_gtdbr220.tar.gz")
-    hash_key = None
-    
-    # hash_dict에서 정확한 키 찾기 (대소문자 차이 무시)
-    for key in hash_dict.keys():
-        if key.lower() == "kraken2_gtdbr220.tar.gz":
-            hash_key = key
-            break
-    
-    if not hash_key:
-        print("Error: Cannot find hash value for merged Kraken2 file in hash_dict")
-        return False
-    
-    try:
-        # 모든 부분 파일이 있으면 병합 시작
-        print(f"Merging {len(part_files)} Kraken2 part files...")
-        
-        # cat 명령으로 부분 파일 병합
-        part_paths = [os.path.join(output_dir, part) for part in part_files]
-        with open(merged_filename, 'wb') as outfile:
-            for part_path in part_paths:
-                print(f"Adding {os.path.basename(part_path)}...")
-                with open(part_path, 'rb') as infile:
-                    # 메모리 효율성을 위해 청크 단위로 복사
-                    shutil.copyfileobj(infile, outfile, length=8*1024*1024)
-        
+    if kraken2_parts:
+        print("Merging Kraken2 parts...")
+        merged_filename = os.path.join(output_dir, "kraken2_gtdbr220.tar.gz")
+        with open(merged_filename, "wb") as outfile:
+            for filename in kraken2_parts:
+                file_path = os.path.join(output_dir, filename)
+                with open(file_path, "rb") as infile:
+                    outfile.write(infile.read())
         print("Kraken2 parts merged successfully.")
-        print(f"Verifying merged file hash...")
         
-        # 해시 검증
-        merged_hash = hash_dict[hash_key]
+        merged_hash = "kraken2_merged_" + "_".join(hash_dict[part][:6] for part in kraken2_parts)        
+        
         try:
-            verify_hash(merged_filename, merged_hash)
-            print(f"Hash verified for merged file")
-            
-            # tar.gz 파일 추출
-            print(f"Extracting merged Kraken2 database...")
+            # Extract the merged file
             extraction_success = extract_tar_gz(merged_filename, output_dir)
+            if not extraction_success:
+                raise Exception("Failed to extract merged Kraken2 file")
             
-            if extraction_success:
-                # 추출 기록에 해시 저장
-                extracted_files[hash_key] = merged_hash
-                save_extraction_record(output_dir, extracted_files)
-                print(f"Extraction complete and hash saved")
-                #decomporess kraken2 gtd r220 database 
-
-                kraken_db_dir = os.path.join(output_dir, "kraken2_GTDBr220")
-                print(f"Decompressing Kraken2 database files in {kraken_db_dir}...")
-
-                if os.path.exists(kraken_db_dir):
-                    import gzip
-                    gz_files = glob.glob(os.path.join(kraken_db_dir, "*.gz"))
-                    for gz_file in gz_files:
-                        print(f"Decompressing {os.path.basename(gz_file)}...")
-                        output_file = gz_file[:-3]  # Remove .gz extension
-                        try:
-                            with gzip.open(gz_file, 'rb') as f_in:
-                                with open(output_file, 'wb') as f_out:
-                                    shutil.copyfileobj(f_in, f_out)
-                            os.remove(gz_file)  # Remove compressed file after successful decompression
-                            print(f"Successfully decompressed {os.path.basename(gz_file)}")
-                        except Exception as e:
-                            print(f"Error decompressing {gz_file}: {str(e)}")
-                else:
-                    print(f"Warning: Kraken2 database directory {kraken_db_dir} not found after extraction")
-                    
-
-                # 병합된 tar.gz 파일 및 부분 파일 제거
-                os.remove(merged_filename)
-                print(f"Removed merged archive")
-                
-                for part_path in part_paths:
+            # Add the merged file to the extraction record
+            extracted_files = load_extraction_record(output_dir)
+            extracted_files[os.path.basename(merged_filename)] = merged_hash
+            save_extraction_record(output_dir, extracted_files)
+            
+            # Remove the merged tar.gz file after successful extraction
+            os.remove(merged_filename)
+            
+            # Remove the original part files to save space
+            for filename in kraken2_parts:
+                part_path = os.path.join(output_dir, filename)
+                if os.path.exists(part_path):
                     os.remove(part_path)
-                    print(f"Removed part file: {os.path.basename(part_path)}")
-                
-                return True
-            else:
-                print("Failed to extract merged Kraken2 database")
-                return False
-                
+            
         except Exception as e:
-            print(f"Hash verification failed for merged file: {str(e)}")
+            print(f"Error processing merged Kraken2 file: {e}")
+            # Clean up the merged file if there was an error
             if os.path.exists(merged_filename):
                 os.remove(merged_filename)
-            return False
-            
-    except Exception as e:
-        print(f"Error during Kraken2 merge process: {str(e)}")
-        if os.path.exists(merged_filename):
-            os.remove(merged_filename)
-        return False
+            raise
+    else:
+        print("No Kraken2 part files found to merge.")
+
 
 def process_file(base_url, output_dir, sif_dir, filename, expected_hash, extracted_files):
     file_url = base_url + filename
@@ -431,6 +364,41 @@ def process_file(base_url, output_dir, sif_dir, filename, expected_hash, extract
             print(f"Extraction failed for {filename}. Archive not deleted.")
     return downloaded_path
 
+# def process_file(base_url, output_dir, filename, expected_hash):
+#     if is_sif_file(filename):
+#         file_path = os.path.join(sif_dir, filename)
+#         file_url = base_url + filename
+#     else:
+
+#         file_path = os.path.join(output_dir, filename)
+#         file_url = base_url + filename
+
+#     try:
+#         verify_hash(file_path, expected_hash)
+#         print(f"{filename} already exists and is verified. Skipping download.")
+#         return file_path
+#     except FileNotFoundError:
+#         print(f"{filename} does not exist. Downloading.")
+#         if is_sif_file(filename):
+#             return download_file(file_url, sif_dir, expected_hash)
+#         else:
+#             return download_file(file_url, output_dir, expected_hash)
+    
+
+#     except Exception as e:
+#         print(f"{filename} hash verification failed: {e}. Re-downloading.")
+#         if is_sif_file(filename):
+#             if os.path.exists(file_path):
+#                 os.remove(file_path)
+#             return download_file(file_url, sif_dir, expected_hash)
+#         else:
+#             if os.path.exists(file_path):
+#                 os.remove(file_path)
+#             return download_file(file_url, output_dir, expected_hash)
+
+        # if os.path.exists(file_path):
+        #     os.remove(file_path)
+        # return download_file(file_url, output_dir, expected_hash)
 
 MODULE_FILE_MAP = {
     'RAWREAD_QC': [
@@ -499,21 +467,23 @@ def check_file_status(filename, expected_hash, extracted_files, sif_dir, output_
     if is_sif_file(filename):
         file_path = os.path.join(sif_dir, filename)
         
-
+        # 이미 검증되었으면 다시 검증하지 않음
         if filename in extracted_files and extracted_files[filename] == expected_hash:
-            return BLUE, '✓'  
+            return BLUE, '✓'  # 기록된 해시 일치 - 추가 검증 불필요
             
+        # 기록에 없거나 해시가 다르면, 파일이 있는 경우 직접 검증
         if os.path.exists(file_path):
             try:
                 verify_hash(file_path, expected_hash)
+                # 검증 성공시 기록 업데이트
                 extracted_files[filename] = expected_hash
                 save_extraction_record(output_dir, extracted_files)
                 return BLUE, '✓'
             except FileNotFoundError:
-                return RED, '✗'  
+                return RED, '✗'  # 파일을 찾을 수 없음
             except Exception as e:
                 print(f"Hash verification failed for {filename}: {str(e)}")
-                return RED, '✗'  
+                return RED, '✗'  # 기타 검증 실패        
         # File doesn't exist
         return YELLOW, '•'
 
@@ -527,11 +497,8 @@ def check_file_status(filename, expected_hash, extracted_files, sif_dir, output_
 
 def download_and_process(base_url, output_dir, sif_dir, hash_dict, target_module=None, no_kraken=False):
     if no_kraken:
-        original_count = len(hash_dict)
         hash_dict = {k: v for k, v in hash_dict.items() if not k.startswith('kraken2_')}
-        removed_count = original_count - len(hash_dict)
-        print(f"\n[Kraken2 Skip Mode] {removed_count} Kraken2-related files excluded from download")
-
+        print("\n[Kraken2 Skip Mode] All Kraken2-related files excluded from download")
             
     module_priority = {
         'RAWREAD_QC': [
@@ -702,77 +669,41 @@ def download_and_process(base_url, output_dir, sif_dir, hash_dict, target_module
             except Exception as e:
                 print(f"Failed to process {filename}: {str(e)}")
         print("=== Database downloads complete ===\n")
-    
-#     if kraken_files and not no_kraken:
 
-# #    if not no_kraken and kraken_files:        
-#         print("\n=== Downloading Kraken2 database files (this may take a while) ===")
-#         # Kraken2 
-#         all_kraken_parts_downloaded = True
-#         for filename, expected_hash in kraken_files.items():
-#             if filename.lower() == "kraken2_gtdbr220.tar.gz":
-#                 continue
-                
-#             try:
-#                 process_file(base_url, output_dir, sif_dir, filename, expected_hash, extracted_files)
-#             except Exception as e:
-#                 all_kraken_parts_downloaded = False
-#                 print(f"Failed to download Kraken2 part {filename}: {str(e)}")
-
-#         print("Merging Kraken2 database parts...")
-#         kraken2_parts = [f for f in hash_dict.keys() 
-#                         if f.startswith("kraken2_") and 
-#                         f != "kraken2_gtdbr220.tar.gz" and
-#                         os.path.exists(os.path.join(output_dir, f))]
-        
-#         if len(kraken2_parts) == 4: 
-#             merge_successful = merge_kraken2_parts(output_dir, hash_dict)
-#             if merge_successful:
-#                 print("Kraken2 database successfully merged and extracted.")
-#             else:
-#                 print("Failed to merge and extract Kraken2 database.")
-#         else:
-#             print(f"Cannot merge Kraken2 parts - found only {len(kraken2_parts)} of 4 required parts")
-#         print("=== Kraken2 download complete ===\n")
-#     #elif kraken_files and no_kraken:
-#     #    print("\n=== Skipping Kraken2 database download as requested ===")
-  
-    if no_kraken:
-        print("\n=== Skipping Kraken2 database download as requested ===")
-    elif kraken_files:  # no_kraken이 False일 때만 실행
+    if kraken_files:
         print("\n=== Downloading Kraken2 database files (this may take a while) ===")
-        # Kraken2 
-        all_kraken_parts_downloaded = True
+        # Kraken2 파일 다운로드
         for filename, expected_hash in kraken_files.items():
-            if filename.lower() == "kraken2_gtdbr220.tar.gz":
-                continue
-                
             try:
                 process_file(base_url, output_dir, sif_dir, filename, expected_hash, extracted_files)
             except Exception as e:
-                all_kraken_parts_downloaded = False
                 print(f"Failed to download Kraken2 part {filename}: {str(e)}")
 
         print("Merging Kraken2 database parts...")
-        kraken2_parts = [f for f in hash_dict.keys() 
-                        if f.startswith("kraken2_") and 
-                        f != "kraken2_gtdbr220.tar.gz" and
-                        os.path.exists(os.path.join(output_dir, f))]
-        
-        if len(kraken2_parts) == 4: 
-            merge_successful = merge_kraken2_parts(output_dir, hash_dict)
-            if merge_successful:
-                print("Kraken2 database successfully merged and extracted.")
-            else:
-                print("Failed to merge and extract Kraken2 database.")
+        merged_filename = "kraken2_gtdbr220.tar.gz"
+        if merged_filename not in extracted_files:
+            merge_kraken2_parts(output_dir, hash_dict)
+            # Kraken2 병합 파일에 대한 가상 해시값 저장
+            merged_hash = "kraken2_merged_" + "_".join(h[:6] for f, h in kraken_files.items())
+            extracted_files[merged_filename] = merged_hash
+            save_extraction_record(output_dir, extracted_files)
         else:
-            print(f"Cannot merge Kraken2 parts - found only {len(kraken2_parts)} of 4 required parts")
+            print(f"Kraken2 parts were already merged and extracted.")
         print("=== Kraken2 download complete ===\n")
 
-
+    if not no_kraken:
+        merge_kraken2_parts(output_dir, hash_dict)
+    else:
+        print("Skipping Kraken2 database merging")
 
     return extracted_files 
 
+    # for filename in hash_dict.keys():
+    #     if not is_sif_file(filename):  
+    #         file_path = os.path.join(output_dir, filename)
+    #         if os.path.exists(file_path) and is_tar_gz(file_path) and not filename.startswith("kraken2_"):
+    #             extract_tar_gz(file_path, output_dir)
+    #             os.remove(file_path)  
 
 
 #get required files for module
@@ -834,10 +765,6 @@ def get_required_files_for_module(module_name, no_kraken=False):
             "sif": []
         }
     }
-    
-    for module in module_files:
-        if "kraken2_gtdbr220.tar.gz" in module_files[module]["db"]:
-            module_files[module]["db"].remove("kraken2_gtdbr220.tar.gz")
 
     module_name_upper = module_name.upper()
     debug_info("Checking requirements for module", module_name_upper)
@@ -855,6 +782,22 @@ def get_required_files_for_module(module_name, no_kraken=False):
         required["db"] = [f for f in required["db"] if not f.startswith("kraken2_")]
     
     return required 
+
+    # if no_kraken and module_name.upper() == "WMS_TAXONOMY":
+    #     required["WMS_TAXONOMY"]["db"] = ["sylph_c200_gtdbr220.syldb.tar.gz"]
+    #     # 대체 파일이 hash_dict에 존재하는지 확인
+    #     try:
+    #         if os.path.exists(os.path.join(os.path.dirname(output_dir), "kraken2_gtdbr220.tar.gz")):
+    #             required["WMS_TAXONOMY"]["db"].append("kraken2_gtdbr220.tar.gz")
+    #     except:
+    #         print("Warning: Cannot check for Kraken2 merged file")            
+
+
+
+    # if module_name.upper() in required:
+    #     return required[module_name.upper()]
+    # else:
+    #     return {"db": [], "sif": []}
 
 
 #check files
@@ -926,6 +869,8 @@ def post_install_verification(output_dir, sif_dir, target_module):
     
     return verification_passed
 
+
+
 def main():
     parser = argparse.ArgumentParser(description="Download metafun databases and SIF images")
     parser.add_argument("--db-dir", help="Directory to store databases", default="./database")
@@ -936,26 +881,6 @@ def main():
     parser.add_argument("--simple-output", action="store_true", help="Simple output with no text, only exit code")
     parser.add_argument("--concise-output", action="store_true", help="Concise output for module dependency check")
     args = parser.parse_args()
-
-
-    no_kraken = args.no_kraken
-    if not no_kraken and not args.check_only:
-        print(f"\n{BOLD}WARNING: The Kraken2 database is large (uncompressed: ~400GB){RESET}")
-        print(f"Downloading will take a significant amount of time and requires substantial disk space.")
-        
-        # 사용자 입력 받기 (기본값: n)
-        prompt = f"{YELLOW}Do you want to download the Kraken2 database? (y/[n]): {RESET}"
-        user_input = input(prompt).strip().lower()
-        
-        # 'y', 'yes' 등의 입력인 경우에만 크라켄 다운로드 진행
-        if user_input in ['y', 'yes']:
-            print(f"{GREEN}Proceeding with Kraken2 database download.{RESET}")
-            no_kraken = False
-        else:
-            print(f"{BLUE}Skipping Kraken2 database download.{RESET}")
-            no_kraken = True
-
-
 
     if args.check_only and args.module:
         if args.simple_output:
@@ -1016,7 +941,7 @@ def main():
 
     hash_dict = download_hashes_file(base_url, args.db_dir)
     #download_and_process(base_url, args.db_dir, args.sif_dir, hash_dict)
-    download_and_process(base_url, args.db_dir, args.sif_dir, hash_dict, args.module, no_kraken) 
+    download_and_process(base_url, args.db_dir, args.sif_dir, hash_dict, args.module, args.no_kraken) 
     
     print("Download completed successfully!")
     print(f"Databases stored in: {os.path.abspath(args.db_dir)}")

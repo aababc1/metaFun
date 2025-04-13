@@ -1182,7 +1182,7 @@ case $(normalize_module "$MODULE") in
         apptainer exec \
             -B "$ABS_INPUT_DIR:/data" \
             -B "$ABS_OUTPUT_DIR:/output" \
-            "${SIF_DIR}/interactive_wms_taxonomy_v01.sif" \
+            "${SIF_DIR}/interactive_wms_taxonomy_v02.sif" \
             Rscript "/scratch/tools/microbiome_analysis/interactive_WMS_TAXONOMY/app.R"
         ;;
         
@@ -1318,9 +1318,9 @@ case $(normalize_module "$MODULE") in
         echo "Port: ${PORT}"
         
         echo -e "\n\033[1;36m=== Command ===\033[0m"
-        echo "python \"${SCRIPTS_DIR}/dash_MAG2.py\" -i \"${FILE_INPUT}\" -p ${PORT}"
+        echo "python \"${SCRIPTS_DIR}/dash_MAG3.py\" -i \"${FILE_INPUT}\" -p ${PORT}"
 
-        python "${SCRIPTS_DIR}/dash_MAG2.py" -i "${FILE_INPUT}" -p "${PORT}"
+        python "${SCRIPTS_DIR}/dash_MAG3.py" -i "${FILE_INPUT}" -p "${PORT}"
 
 
         ;;

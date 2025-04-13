@@ -98,152 +98,115 @@ df[tax_ranks] = df['classification'].str.split(';', expand=True)
 metadata_columns = [col for col in df.columns if col not in tax_ranks + ['classification', 'Genome']]
 dropdown_options = [{'label': col, 'value': col} for col in metadata_columns if col != 'formatted_classification']
 
-# create sunburst plot 
-# def create_sunburst(selected_metadata):
-    
-#     path = tax_ranks.copy()  
-#     #path = tax_ranks + [selected_metadata]
-#     if selected_metadata not in tax_ranks:
-#         path.append(selected_metadata)
-
-#     valid_mask = df[tax_ranks].ne('None').any(axis=1)
-#     filtered_df = df[valid_mask].copy()    
 
 
-#     for rank in tax_ranks:
-#         filtered_df[rank] = filtered_df[rank].replace('None', '')    
 
-#     sunburst_fig = px.sunburst(
-#         #df,
-#         filtered_df, 
-#         path=path,
-#         color=selected_metadata,
-#         color_continuous_scale=px.colors.sequential.RdBu,
-#         maxdepth=8 # This will show up to species level (6) plus one more for metadata
-#     )
-#     sunburst_fig.update_layout(height=700, width=700) 
-#     return sunburst_fig
-# def create_sunburst(df, selected_metadata):
-#     if df is None or df.empty or selected_metadata not in df.columns:
-#         # 데이터가 없거나 유효하지 않을 때 빈 figure 반환
-#         fig = go.Figure()
-#         fig.add_annotation(text="데이터가 유효하지 않습니다", 
-#                           xref="paper", yref="paper",
-#                           x=0.5, y=0.5, showarrow=False)
-#         return fig
-    
-#     try:
-#         # 숫자형 데이터일 경우 별도 처리
-#         if is_numeric(df[selected_metadata]):
-#             # 임시 열 생성하여 숫자 데이터도 경로에 사용할 수 있게 함
-#             temp_col = f"{selected_metadata}_path"
-#             df[temp_col] = df[selected_metadata].astype(str)
-#             path = tax_ranks + [temp_col]
-            
-#             sunburst_fig = px.sunburst(
-#                 df, 
-#                 path=path,
-#                 color=selected_metadata,  # 원래 숫자 열은 색상에 사용
-#                 color_continuous_scale=px.colors.sequential.RdBu,
-#                 maxdepth=8
-#             )
-#         else:
-#             path = tax_ranks + [selected_metadata]
-#             sunburst_fig = px.sunburst(
-#                 df, 
-#                 path=path,
-#                 color=selected_metadata,
-#                 maxdepth=8
-#             )
-            
-#         sunburst_fig.update_layout(height=700, width=700)
-#         return sunburst_fig
-#     except Exception as e:
-#         # 오류 발생 시 오류 메시지가 있는 figure 반환
-#         fig = go.Figure()
-#         fig.add_annotation(text=f"Sunburst 플롯 생성 오류: {str(e)}", 
-#                           xref="paper", yref="paper",
-#                           x=0.5, y=0.5, showarrow=False)
-#         fig.update_layout(height=700, width=700)
-#         return fig
+
 def create_sunburst(df, selected_metadata):
     if df is None or df.empty or selected_metadata not in df.columns:
-        # 데이터가 유효하지 않으면 빈 figure 반환
         fig = go.Figure()
-        fig.add_annotation(text="데이터가 유효하지 않습니다", 
+        fig.add_annotation(text="data is not valid", 
                           xref="paper", yref="paper",
                           x=0.5, y=0.5, showarrow=False)
         fig.update_layout(height=700, width=700)
         return fig
     
     try:
-        # Taxonomy 데이터 전처리 - None 값을 빈 문자열로 변환
-        filtered_df = df.copy()
-        for rank in tax_ranks:
-            filtered_df[rank] = filtered_df[rank].fillna('').replace('None', '')
+        #  work_df is a copy of df
+        work_df = df.copy()
         
-        # 빈 경로를 가진 행 필터링
-        valid_data = filtered_df[filtered_df[tax_ranks].ne('').any(axis=1)]
-        if valid_data.empty:
-            # 유효한 데이터가 없으면 메시지 표시
-            fig = go.Figure()
-            fig.add_annotation(text="유효한 분류 데이터가 없습니다", 
-                              xref="paper", yref="paper",
-                              x=0.5, y=0.5, showarrow=False)
-            fig.update_layout(height=700, width=700)
-            return fig
+        # taxonomy data preprocessing - None values are converted to empty strings
+        for rank in tax_ranks:
+            work_df[rank] = work_df[rank].fillna('').replace('None', '')
+        
+        # 선택된 메타데이터의 처리
+        if pd.api.types.is_numeric_dtype(df[selected_metadata].dropna()):
+            # Numeric type 
+            # 1. None values are converted to NaN
+            work_df[selected_metadata] = pd.to_numeric(work_df[selected_metadata], errors='coerce')
             
-        # 선택된 메타데이터 처리
-        if is_numeric(valid_data[selected_metadata]):
-            # 숫자형 메타데이터는 문자열 버전 생성
-            str_col = f"{selected_metadata}_str"
-            valid_data[str_col] = valid_data[selected_metadata].astype(str)
+            # 2. Remove rows with NaN values
+            valid_data = work_df.dropna(subset=[selected_metadata])
             
-            # 경로 설정 (taxonomy + 메타데이터 문자열)
-            path = tax_ranks + [str_col]
+            # 3. Remove rows with empty taxonomy paths
+            valid_data = valid_data[valid_data[tax_ranks].ne('').any(axis=1)]
             
-            # 선버스트 플롯 생성
+            if valid_data.empty:
+                fig = go.Figure()
+                fig.add_annotation(text="No valid data after filtering NA values", 
+                                  xref="paper", yref="paper",
+                                  x=0.5, y=0.5, showarrow=False)
+                fig.update_layout(height=700, width=700)
+                return fig
+            
+            # 4. Binning for numeric data - This is the key point
+            # Binning is used to categorize numeric data
+            n_bins = min(10, len(valid_data[selected_metadata].unique()))
+            if n_bins <= 1:
+                n_bins = 2  # Use at least 2 bins
+            
+            # Create binned categories
+            valid_data['binned'] = pd.cut(
+                valid_data[selected_metadata], 
+                bins=n_bins,
+                labels=[f"{selected_metadata}: {i}" for i in range(n_bins)]
+            )
+            
+            # Set path
+            path = [col for col in tax_ranks if valid_data[col].nunique() > 1] + ['binned']
+            
+            # Create sunburst plot when color is numeric data
             fig = px.sunburst(
-                valid_data, 
+                valid_data,
                 path=path,
                 color=selected_metadata,
-                color_continuous_scale=px.colors.sequential.RdBu,
-                maxdepth=len(tax_ranks) + 1  # 최대 깊이 제한
+                color_continuous_scale=px.colors.sequential.RdBu
             )
         else:
-            # 범주형 데이터 처리
-            # None 값을 'Unknown'으로 대체하여 표시
-            valid_data[selected_metadata] = valid_data[selected_metadata].fillna('Unknown').replace('None', 'Unknown')
+            # String/categorical data processing
+            # Remove rows with None values
+            valid_data = work_df[work_df[selected_metadata].notna() & 
+                               (work_df[selected_metadata] != 'None') & 
+                               (work_df[selected_metadata] != '')]
             
-            # 경로 설정
-            path = tax_ranks + [selected_metadata]
+            # Remove rows with empty taxonomy paths
+            valid_data = valid_data[valid_data[tax_ranks].ne('').any(axis=1)]
             
-            # 선버스트 플롯 생성
+            if valid_data.empty:
+                fig = go.Figure()
+                fig.add_annotation(text="No valid data after filtering NA values", 
+                                  xref="paper", yref="paper",
+                                  x=0.5, y=0.5, showarrow=False)
+                fig.update_layout(height=700, width=700)
+                return fig
+            
+            # Only include paths that are actually used (columns with only one value are not meaningful)
+            path = [col for col in tax_ranks if valid_data[col].nunique() > 1] + [selected_metadata]
+            
             fig = px.sunburst(
-                valid_data, 
+                valid_data,
                 path=path,
-                color=selected_metadata,
-                maxdepth=len(tax_ranks) + 1
+                color=selected_metadata
             )
         
-        # 레이아웃 설정
+        # Layout setting
         fig.update_layout(
-            height=700, 
-            width=700,
+            height=800, 
+            width=800,
             margin=dict(t=30, l=0, r=0, b=0)
         )
         
         return fig
         
     except Exception as e:
-        # 오류 발생 시 로그 출력 및 피드백
-        print(f"Sunburst 플롯 생성 오류: {str(e)}")
+        # When an error occurs, print the error and provide feedback
+        print(f"Sunburst plot creation error: {str(e)}")
         fig = go.Figure()
-        fig.add_annotation(text=f"Sunburst 플롯 생성 오류: {str(e)}", 
+        fig.add_annotation(text=f"Sunburst plot creation error: {str(e)}", 
                           xref="paper", yref="paper",
                           x=0.5, y=0.5, showarrow=False)
         fig.update_layout(height=700, width=700)
-        return fig    
+        return fig
 
 
 section_style = {
@@ -429,29 +392,8 @@ app.layout = html.Div([
             ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'height': '100%'}),
         ], style={'overflow': 'visible'}),
 
-        # html.Div([
-
-        #     dcc.Graph(
-        #         id='filtered-scatter-plot', 
-        #         style={'width': '65%', 'display': 'inline-block', 'height': '600px'}
-        #     ),
-        #     dbc.Tooltip(
-        #         "Filtered scatter plot based on selected criteria",
-        #         target="filtered-scatter-plot",
-        #         style={"background-color": "#17a2b8", "color": "white"}
-        #     ),
-        #     dcc.Graph(
-        #         id='filtered-distribution-plot', 
-        #         style={'width': '35%', 'display': 'inline-block', 'height': '600px'}
-        #     ),
-        #     dbc.Tooltip(
-        #         "Distribution of filtered data",
-        #         target="filtered-distribution-plot",
-        #         style={"background-color": "#17a2b8", "color": "white"}
-        #     ),
-        # ], style={'width': '100%', 'display': 'flex', 'overflow': 'visible'}),
         html.Div([
-            # 왼쪽 scatter plot
+            # left scatter plot
             html.Div([
                 html.H3('Genome Quality Scatter Plot of Selected Taxon', 
                        style={'textAlign': 'center', 'marginBottom': '10px'}),
@@ -466,7 +408,7 @@ app.layout = html.Div([
                 ),
             ], style={'width': '65%', 'display': 'inline-block'}),
             
-            # 오른쪽 distribution plot
+            # right distribution plot
             html.Div([
                 html.H3('Metadata Distribution Plot of Selected Taxon', 
                        style={'textAlign': 'center', 'marginBottom': '10px'}),
@@ -495,10 +437,10 @@ app.layout = html.Div([
             id="overwrite-modal",
             is_open=False,
             style={
-                'zIndex': 9999,  # 높은 z-index 값으로 다른 요소보다 위에 표시
-                'backgroundColor': 'rgba(0, 0, 0, 0.5)'  # 배경 어둡게
+                'zIndex': 9999,  # higher z-index value to display above other elements
+                'backgroundColor': 'rgba(0, 0, 0, 0.5)'  # darken the background
             },
-            centered=True  # 중앙에 표시
+            centered=True  # display in the center
 
         ),
         html.Div(id='temp-storage', style={'display': 'none'}),
@@ -598,7 +540,7 @@ app.layout = html.Div([
     [Input('metadata-dropdown', 'value')]
 )
 def display_dynamic_filter(selected_metadata):
-    # 필터링 컴포넌트를 표시하지 않고 빈 div를 반환
+    # Do not display the filtering component and return an empty div
     return html.Div()
 
 
@@ -612,7 +554,6 @@ def update_tax_value_options(selected_tax_rank):
     unique_values = df[selected_tax_rank].unique()
     return [{'label': val, 'value': val} for val in unique_values if val != 'None']
 
-
 @app.callback(
     [Output('overall-scatter-plot', 'figure'),
      Output('overall-distribution-plot', 'figure')],
@@ -621,12 +562,11 @@ def update_tax_value_options(selected_tax_rank):
      Input('tax-value-dropdown', 'value'),
      Input('overall-scatter-plot', 'selectedData')]
 )
-
 def update_overall_plots(color_var, selected_tax_rank, selected_tax_values, selected_data):
     # Create a copy of the dataframe for plot manipulation
     plot_df = df.copy()
     
-    # Convert 'None' placeholders to -999 only for the plotting data
+    # Convert 'None' placeholders to -999 for numeric data
     plot_df[color_var] = plot_df[color_var].replace('None', -999)
 
     if selected_tax_rank and selected_tax_values:
@@ -642,23 +582,50 @@ def update_overall_plots(color_var, selected_tax_rank, selected_tax_values, sele
     else:
         filtered_data = plot_df
 
-    # Create scatter plot with go.Figure instead of px.scatter
+    # Create scatter plot with go.Figure 
     scatter_fig = go.Figure()
 
-    # Add trace for non-placeholder data
-    if not filtered_data[~placeholder_mask].empty:
-        scatter_fig.add_trace(go.Scatter(
-            x=filtered_data[~placeholder_mask]['Completeness'],
-            y=filtered_data[~placeholder_mask]['Contamination'],
-            mode='markers',
-            marker=dict(
-                color=filtered_data[~placeholder_mask][color_var],
-                colorscale='Viridis',
-                showscale=True
-            ),
-            text=filtered_data[~placeholder_mask]['formatted_classification'],
-            hovertemplate='Completeness: %{x}<br>Contamination: %{y}<br>Classification: %{text}<br>' + f'{color_var}: ' + '%{marker.color}<extra></extra>'
-        ))
+    # Check if the color variable contains numeric data
+    is_numeric_data = pd.api.types.is_numeric_dtype(filtered_data[~placeholder_mask][color_var]) 
+
+    # For non-numeric data, use a discrete colormap
+    if not is_numeric_data:
+        # Get unique categories and create a categorical color mapping
+        if not filtered_data[~placeholder_mask].empty:
+            unique_categories = filtered_data[~placeholder_mask][color_var].unique()
+            # Use px.colors functions to generate color map
+            category_colors = px.colors.qualitative.Plotly[:len(unique_categories)]
+            color_map = dict(zip(unique_categories, category_colors))
+            
+            # Add a trace for each category
+            for category in unique_categories:
+                category_data = filtered_data[~placeholder_mask][filtered_data[~placeholder_mask][color_var] == category]
+                scatter_fig.add_trace(go.Scatter(
+                    x=category_data['Completeness'],
+                    y=category_data['Contamination'],
+                    mode='markers',
+                    marker=dict(color=color_map[category]),
+                    name=str(category),
+                    text=category_data['formatted_classification'],
+                    hovertemplate='Completeness: %{x}<br>Contamination: %{y}<br>Classification: %{text}<br>' + 
+                                 f'{color_var}: {category}<extra></extra>'
+                ))
+    else:
+        # For numeric data, use the original approach with a continuous colorscale
+        if not filtered_data[~placeholder_mask].empty:
+            scatter_fig.add_trace(go.Scatter(
+                x=filtered_data[~placeholder_mask]['Completeness'],
+                y=filtered_data[~placeholder_mask]['Contamination'],
+                mode='markers',
+                marker=dict(
+                    color=filtered_data[~placeholder_mask][color_var].astype(float),
+                    colorscale='Viridis',
+                    showscale=True
+                ),
+                text=filtered_data[~placeholder_mask]['formatted_classification'],
+                hovertemplate='Completeness: %{x}<br>Contamination: %{y}<br>Classification: %{text}<br>' + 
+                             f'{color_var}: ' + '%{marker.color}<extra></extra>'
+            ))
 
     # Add trace for placeholder values
     if placeholder_mask.any():
@@ -705,7 +672,7 @@ def update_overall_plots(color_var, selected_tax_rank, selected_tax_values, sele
 
     df_for_hist[color_var] = df_for_hist[color_var].replace(-999, 'Not available')
     
-    if is_numeric(df_for_hist[color_var]):
+    if is_numeric_data:
         dist_fig = px.histogram(
             df_for_hist[df_for_hist[color_var] != 'Not available'],
             x=color_var,
@@ -735,7 +702,130 @@ def update_overall_plots(color_var, selected_tax_rank, selected_tax_values, sele
 
     dist_fig.update_layout(plot_bgcolor='white', font={'family': 'Arial', 'size': 14})
 
-    return scatter_fig, dist_fig    
+    return scatter_fig, dist_fig
+# @app.callback(
+#     [Output('overall-scatter-plot', 'figure'),
+#      Output('overall-distribution-plot', 'figure')],
+#     [Input('color-dropdown', 'value'),
+#      Input('tax-rank-dropdown', 'value'),
+#      Input('tax-value-dropdown', 'value'),
+#      Input('overall-scatter-plot', 'selectedData')]
+# )
+
+# def update_overall_plots(color_var, selected_tax_rank, selected_tax_values, selected_data):
+#     # Create a copy of the dataframe for plot manipulation
+#     plot_df = df.copy()
+    
+#     # Convert 'None' placeholders to -999 only for the plotting data
+#     plot_df[color_var] = plot_df[color_var].replace('None', -999)
+
+#     if selected_tax_rank and selected_tax_values:
+#         plot_df = plot_df[plot_df[selected_tax_rank].isin(selected_tax_values)]
+        
+#     # Mask for identifying placeholders in the dataset
+#     placeholder_mask = plot_df[color_var] == -999
+
+#     if selected_data and selected_data['points']:
+#         selected_points = selected_data['points']
+#         selected_indices = [point['pointIndex'] for point in selected_points]
+#         filtered_data = plot_df.iloc[selected_indices]
+#     else:
+#         filtered_data = plot_df
+
+#     # Create scatter plot with go.Figure instead of px.scatter
+#     scatter_fig = go.Figure()
+
+#     # Add trace for non-placeholder data
+#     if not filtered_data[~placeholder_mask].empty:
+#         scatter_fig.add_trace(go.Scatter(
+#             x=filtered_data[~placeholder_mask]['Completeness'],
+#             y=filtered_data[~placeholder_mask]['Contamination'],
+#             mode='markers',
+#             marker=dict(
+#                 color=filtered_data[~placeholder_mask][color_var],
+#                 colorscale='Viridis',
+#                 showscale=True
+#             ),
+#             text=filtered_data[~placeholder_mask]['formatted_classification'],
+#             hovertemplate='Completeness: %{x}<br>Contamination: %{y}<br>Classification: %{text}<br>' + f'{color_var}: ' + '%{marker.color}<extra></extra>'
+#         ))
+
+#     # Add trace for placeholder values
+#     if placeholder_mask.any():
+#         scatter_fig.add_trace(go.Scatter(
+#             x=filtered_data[placeholder_mask]['Completeness'],
+#             y=filtered_data[placeholder_mask]['Contamination'],
+#             mode='markers',
+#             marker=dict(
+#                 color='red',
+#                 size=10,
+#                 symbol='x',
+#                 line=dict(color='Black', width=1)
+#             ),
+#             name='Not available',
+#             text=filtered_data[placeholder_mask]['formatted_classification'],
+#             hovertemplate='Completeness: %{x}<br>Contamination: %{y}<br>Classification: %{text}<extra></extra>'
+#         ))
+
+#     scatter_fig.update_layout(
+#         title='Overall: Completeness vs Contamination',
+#         plot_bgcolor='white',
+#         font={'family': 'Arial', 'size': 14},
+#         dragmode='select',
+#         clickmode='event+select',
+#         selectdirection='any',
+#         legend=dict(
+#             title='',
+#             orientation='h',
+#             yanchor="bottom",
+#             y=1.02,
+#             xanchor="right",
+#             x=1
+#         ),
+#         xaxis_title="Completeness",
+#         yaxis_title="Contamination"
+#     )
+
+#     # Distribution plot
+#     if selected_data and selected_data['points']:
+#         selected_indices = [point['pointIndex'] for point in selected_data['points']]
+#         df_for_hist = plot_df.iloc[selected_indices]
+#     else:
+#         df_for_hist = plot_df
+
+#     df_for_hist[color_var] = df_for_hist[color_var].replace(-999, 'Not available')
+    
+#     if is_numeric(df_for_hist[color_var]):
+#         dist_fig = px.histogram(
+#             df_for_hist[df_for_hist[color_var] != 'Not available'],
+#             x=color_var,
+#             title=f'Distribution of {color_var} for Selected Points',
+#             nbins=30
+#         )
+#     else:
+#         value_counts = df_for_hist[color_var].value_counts()
+#         dist_fig = px.bar(
+#             x=value_counts.index,
+#             y=value_counts.values,
+#             title=f'Distribution of {color_var} for Selected Points'
+#         )
+#         dist_fig.update_xaxes(title_text=color_var)
+#         dist_fig.update_yaxes(title_text='Number of genomes')
+
+#     not_available_count = (df_for_hist[color_var] == 'Not available').sum()
+#     if not_available_count > 0:
+#         dist_fig.add_annotation(
+#             x=0.5, y=1.05,
+#             xref='paper', yref='paper',
+#             text=f'Number of genomes without metadata: {not_available_count}',
+#             showarrow=False,
+#             yshift=10,
+#             font=dict(color='red', size=12)
+#         )
+
+#     dist_fig.update_layout(plot_bgcolor='white', font={'family': 'Arial', 'size': 14})
+
+#     return scatter_fig, dist_fig    
  
 @app.callback(
     Output('sunburst-plot', 'figure'),
@@ -803,18 +893,32 @@ def update_filtered_plots(clickData, selected_metadata, n_clicks, current_figure
                 if level and i < len(tax_ranks):
                     filtered_df = filtered_df[filtered_df[tax_ranks[i]] == level]
     
-    if filtered_df.empty:
-        return dash.no_update, dash.no_update
+    # if filtered_df.empty:
+    #     return dash.no_update, dash.no_update
     
+    if filtered_df.empty or selected_metadata is None:
+        # Create empty figures with messages if there's no data or metadata
+        scatter_fig = go.Figure()
+        scatter_fig.add_annotation(text="No data to display or no metadata selected", 
+                                  xref="paper", yref="paper",
+                                  x=0.5, y=0.5, showarrow=False)
+        
+        dist_fig = go.Figure()
+        dist_fig.add_annotation(text="No data to display or no metadata selected", 
+                               xref="paper", yref="paper",
+                               x=0.5, y=0.5, showarrow=False)
+        
+        return scatter_fig, dist_fig
+
     hover_data = ['formatted_classification'] + metadata_columns
     
-    # 데이터 전처리
+    # Data preprocessing
     plot_df = filtered_df.copy()
     plot_df[selected_metadata] = plot_df[selected_metadata].replace('None', np.nan)
     is_numeric_metadata = pd.api.types.is_numeric_dtype(plot_df[selected_metadata].dropna())
     
     if is_numeric_metadata:
-        # 숫자형 데이터 처리
+        # Numeric data processing
         plot_df[selected_metadata] = pd.to_numeric(plot_df[selected_metadata], errors='coerce')
         placeholder_mask = plot_df[selected_metadata].isna()
         
@@ -828,7 +932,7 @@ def update_filtered_plots(clickData, selected_metadata, n_clicks, current_figure
             title='Filtered: Completeness vs Contamination'
         )
         
-        # NA 값을 위한 별도의 trace 추가
+        # Add a separate trace for NA values
         if placeholder_mask.any():
             scatter_fig.add_trace(
                 go.Scatter(
@@ -864,7 +968,7 @@ def update_filtered_plots(clickData, selected_metadata, n_clicks, current_figure
                 font=dict(color='red', size=12)
             )
     else:
-        # 범주형 데이터 처리
+        # String/categorical data processing
         scatter_fig = px.scatter(
             plot_df,
             x='Completeness',
@@ -874,14 +978,14 @@ def update_filtered_plots(clickData, selected_metadata, n_clicks, current_figure
             title='Filtered: Completeness vs Contamination'
         )
         
-        # 범주형 distribution plot
+        # Categorical distribution plot
         dist_fig = px.histogram(
             plot_df,
             x=selected_metadata,
             title=f'Filtered Distribution of {selected_metadata}'
         )
     
-    # 공통 레이아웃 설정
+    # Common layout setting
     scatter_fig.update_layout(
         plot_bgcolor='white',
         font={'family': 'Arial', 'size': 14},
@@ -913,18 +1017,18 @@ def update_filtered_plots(clickData, selected_metadata, n_clicks, current_figure
 def update_table(search_value, clickData, selected_metadata, sort_by, current_data):
     filtered_df = df.copy()
     
-    # Sunburst 선택에 따른 필터링
+    # Filtering based on Sunburst selection
     if clickData:
         current_path = clickData['points'][0]['id'].split('/')
         for i, level in enumerate(current_path):
             if level and i < len(tax_ranks):
                 filtered_df = filtered_df[filtered_df[tax_ranks[i]] == level]
     
-    # 검색어에 따른 필터링
+    # Filtering based on search value
     if search_value:
         filtered_df = filtered_df[filtered_df.apply(lambda row: any(str(search_value).lower() in str(cell).lower() for cell in row), axis=1)]
     
-    # 정렬 적용
+    # Apply sorting
     if sort_by:
         filtered_df = filtered_df.sort_values(
             [col['column_id'] for col in sort_by],
@@ -972,7 +1076,7 @@ def save_to_local(n_clicks, filename, table_data):
 
 #    return dcc.send_data_frame(df.to_csv, f"{filename}.csv", index=False)
 
-# 서버 저장 콜백 orignal 
+# server save callback original
 
 # @app.callback(
 #     Output("save-status", "children"),
@@ -1046,17 +1150,17 @@ def save_to_server(save_clicks, confirm_clicks, cancel_clicks, filename, table_d
     server_path = os.path.join(os.getcwd(), f"{filename}.csv")
     
     if button_id == "save-server-button" and not os.path.exists(server_path):
-        # 파일이 존재하지 않으면 바로 저장
+        # If the file does not exist, save it immediately
         filtered_df = pd.DataFrame(table_data)
         
-        # formatted_classification 열 제거
+        # Remove the formatted_classification column
         if 'formatted_classification' in filtered_df.columns:
             filtered_df = filtered_df.drop(columns=['formatted_classification'])
         
-        # 원본 데이터에서 매칭되는 행 추출
+        # Extract rows matching the original data
         result_df = df_raw[df_raw['Genome'].isin(filtered_df['Genome'])].copy()
         
-        # 원본 데이터에도 formatted_classification 열 제거
+        # Remove the formatted_classification column from the original data
         if 'formatted_classification' in result_df.columns:
             result_df = result_df.drop(columns=['formatted_classification'])
         
@@ -1064,17 +1168,17 @@ def save_to_server(save_clicks, confirm_clicks, cancel_clicks, filename, table_d
         return f"File saved to server at {server_path}"
     
     elif button_id == "confirm-overwrite" and not modal_is_open:
-        # 덮어쓰기 확인 후 저장
+        # Confirm overwrite and save
         filtered_df = pd.DataFrame(table_data)
         
-        # formatted_classification 열 제거
+        # Remove the formatted_classification column
         if 'formatted_classification' in filtered_df.columns:
             filtered_df = filtered_df.drop(columns=['formatted_classification'])
         
-        # 원본 데이터에서 매칭되는 행 추출
+        # Extract rows matching the original data
         result_df = df_raw[df_raw['Genome'].isin(filtered_df['Genome'])].copy()
         
-        # 원본 데이터에도 formatted_classification 열 제거
+        # Remove the formatted_classification column from the original data
         if 'formatted_classification' in result_df.columns:
             result_df = result_df.drop(columns=['formatted_classification'])
         
