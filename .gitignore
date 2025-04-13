@@ -1,7 +1,7 @@
 bioconda_push.log
 bioconda_recipe_making.log
 build.log
-v0.1.1.tar.gz
+v*.*.tar.gz
 build_*
 bioconda-recipes/
 azure-pipeline-master.yml
