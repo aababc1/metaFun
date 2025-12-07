@@ -1,0 +1,28 @@
+{
+  "channeldata_version": 1,
+  "packages": {
+    "metafun": {
+      "activate.d": false,
+      "binary_prefix": false,
+      "deactivate.d": false,
+      "description": "A comprehensive package that includes custom scripts and workflows for metaFun analysis pipeline. Version 1.0.0 adds WMS_STRAIN module for strain-level microbial diversity analysis using inStrain.",
+      "home": "https://github.com/aababc1/metaFun",
+      "license": "MIT",
+      "post_link": false,
+      "pre_link": false,
+      "pre_unlink": false,
+      "run_exports": {},
+      "subdirs": [
+        "noarch"
+      ],
+      "summary": "Custom package for metaFun workflow management",
+      "text_prefix": false,
+      "timestamp": 1764916592,
+      "version": "1.0.0"
+    }
+  },
+  "subdirs": [
+    "linux-64",
+    "noarch"
+  ]
+}

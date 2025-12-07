@@ -1,0 +1,72 @@
+\033[1;38;2;255;149;0mINTERACTIVE_\033[38;2;78;149;217mWMS_TAXONOMY\033[0m
+
+Usage:
+    metafun -module INTERACTIVE_WMS_TAXONOMY -i <phyloseq_RDS_file> -m <metadata_file> -o <output_dir> -p <port>
+
+\033[1;38;2;255;149;0mINTERACTIVE_\033[38;2;78;149;217mWMS_TAXONOMY\033[0m : Interactive visualization and analysis of metagenomic taxonomy data
+=========================================================
+\033[1m1. Composition Explorer\033[0m
+   - Metadata Explorer: Visualize metadata distributions and relationships
+   - Taxon Analyzer: Examine individual taxa across samples and metadata variables
+   - Composition Barplot: Create stacked bar plots of taxonomic composition
+   - Composition Boxplot: Compare taxa distributions across groups with box plots
+
+\033[1m2. Diversity Explorer\033[0m
+   - Alpha Diversity: Analyze within-sample diversity indices and their correlations
+   - Beta Diversity: Explore between-sample diversity with ordination plots and statistics
+   - PERMANOVA Analysis: Statistical testing of metadata correlation with community structure
+
+\033[1m3. Differential Abundance Analysis\033[0m
+   - MaAsLin2 Integration: Identify taxa significantly associated with metadata variables
+   - Statistical Visualizations: Volcano plots and heatmaps of significant associations
+   - Multiple Testing Correction: Robust statistical analysis with various correction methods
+
+This module provides a comprehensive web interface to explore and analyze metagenomic 
+taxonomy data with interactive visualizations and statistical tools.
+
+\033[1;31mRequired Parameters:\033[0m 
+------------------
+\033[31m-i, --input\033[0m          : Input RDS file containing phyloseq object or directory containing RDS files
+                     (If not specified, the most recent results will be used)
+
+\033[1;33mOptional Parameters:\033[0m 
+------------------
+\033[33m-m, --metadata\033[0m       : Additional metadata file in CSV format
+\033[33m-o, --output\033[0m         : Output directory for exported files (default: results/interactive_wms_taxonomy)
+\033[33m-p, --port\033[0m           : Shiny server port number (default: 3838)
+
+\033[1;38;2;0;255;255mCommand Example:\033[0m
+-----------------
+    metafun -module INTERACTIVE_WMS_TAXONOMY -i results/metagenome/taxonomy.RDS -m metadata.csv -o results/interactive_wms_taxonomy
+
+\033[1;38;2;0;255;255mInternal Command:\033[0m
+-----------------
+    apptainer exec -B <input_dir>:/data -B <output_dir>:/output -B <metadata_file>:/metadata.csv \\
+    "${SIF_DIR}/interactive_wms_taxonomy_v01.sif" \\
+    Rscript "/scratch/tools/microbiome_analysis/interactive_WMS_TAXONOMY/app.R" \\
+    --input /data --metadata /metadata.csv --output /output --port <port>
+
+\033[1;38;2;0;255;255mUsage Instructions:\033[0m
+-----------------
+1. Master Controller
+   - Load phyloseq object from local file or server directory
+   - Select a metadata column for analysis
+   - Run Master Analysis to initialize all visualizations
+
+2. Composition Explorer
+   - Metadata Explorer: Visualize sample metadata distributions
+   - Taxon Analyzer: Explore individual taxa abundances across samples
+   - Composition Barplot: Create stacked barplots of taxonomic composition by group
+   - Composition Boxplot: Compare taxa distributions across groups with boxplots
+
+3. Diversity Explorer
+   - Alpha Diversity: Compare within-sample diversity using various metrics
+   - Beta Diversity: Explore community relationships with ordination plots
+   - Statistical Testing: Analyze relationships between diversity and metadata
+
+4. Differential Abundance Analyzer
+   - Run MaAsLin2 analysis to identify taxa associated with metadata variables
+   - Explore results with interactive volcano plots
+   - View statistical significance in heatmaps
+
+\033[38;2;180;180;180mNote:\033[0m All visualizations can be customized with extensive plot controls and exported as publication-ready figures.

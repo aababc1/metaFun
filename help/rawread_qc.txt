@@ -1,0 +1,63 @@
+
+\033[1;31m RAWREAD_QC \033[0m
+
+Usage : 
+    metafun -module RAWREAD_QC --inputDir "${your_read_directory}"
+\033[31mRAWREAD_QC : Quality control of raw reads from whole metagenome sequencing data\033[0m
+=========================================================
+ \033[31mFastQC\033[0m            : Raw read quality assessment
+ \033[31mfastp\033[0m             : Read quality trimming/filtering
+ \033[31mBowtie2\033[0m           : Host read filtering (optional)
+ \033[31mMultiQC\033[0m           : Combined quality reporting
+
+This module processes raw metagenomic reads through quality control steps to prepare them for assembly.
+
+\033[31mRequired Parameters:\033[0m 
+------------------
+\033[31m--inputDir\033[0m         : Directory containing raw read files
+                     Files should be paired-end gzipped FASTQ files
+                     with naming pattern: *_1.fastq.gz and *_2.fastq.gz
+
+\033[31m--filter\033[0m           : Type of host reads to filter out
+                     Available options:
+                     \033[31mhuman\033[0m : Filter human reads (default)
+                    \033[31mnone\033[0m :  \033[1;31mSkip host filtering\033[0m
+                     \033[31mcustom\033[0m : Use custom host genome index
+                          1. Prepare index: 
+                             \033[1m$ metafun -module PREPARE_CUSTOM_HOST -i <genome.fasta> -f <custom_name>\033[0m
+                             Your custom genome is indexed by Bowtie2 using \033[31mcustom_name\033[0m. 
+                          2. Use with: metafun -module RAWREAD_QC  --filter <custom_name>
+
+
+Optional Parameters:
+------------------
+\033[33m--custom_index\033[0m     : Path to custom genome index for filtering
+                     Used only when --filter=custom
+\033[33m--outdir\033[0m           : Output directory 
+                     (default: ${launch_dir}/results/metagenome/RAWREAD_QC)
+\033[33m--cpus\033[0m             : Number of CPUs to use (default: 4)
+
+
+\033[38;2;0;255;255mOutput File Description:\033[0m
+-----------
+\033[38;2;0;255;255m- read_filtered/\033[0m           : Directory containing filtered reads
+\033[38;2;0;255;255m- fastqc_raw/\033[0m              : Raw read quality reports
+\033[38;2;0;255;255m- fastqc_filtered/\033[0m         : Filtered read quality reports
+\033[38;2;0;255;255m- multiqc/\033[0m                 : Combined quality reports
+
+
+\033[1;36mSelected Parameters:\033[0m
+------------------
+\033[33mInput Directory:\033[0m   %INPUT_DIR%
+\033[33mFilter Type:\033[0m       %FILTER%
+%CUSTOM_INDEX%
+\033[33mCPUs Used:\033[0m         %CPUS%
+\033[33mOutput Directory:\033[0m %OUTPUT_DIR%
+
+
+\033[38;2;180;180;180mNote:\033[0m Filtered reads from this module will be used in: 
+\033[38;2;255;149;0mASSEMBLY_BINNING\033[0m 
+\033[38;2;0;176;80mBIN_ASSESSMENT\033[0m 
+\033[38;2;8;70;250mWMS_TAXONOMY\033[0m 
+\033[38;2;112;48;160mWMS_FUNCTION\033[0m
+.

@@ -1,0 +1,36 @@
+\033[1;38;2;112;48;160mWMS_FUNCTION \033[0m
+
+Usage :
+    metafun -module WMS_FUNCTION --inputDir "${filtered_reads_dir}" --metadata "${metadata_file}" --sampleIDcolumn "${column_number}" --analysiscolumn "${analysis_column}"
+    
+\033[38;2;112;48;160mWMS_FUNCTION : Functional profiling of whole metagenome sequencing data\033[0m
+=========================================================
+ \033[38;2;112;48;160mHUMAnN3\033[0m           : Hierarchical MetaGenomic Functional Profiling
+ \033[38;2;112;48;160mUniRef90\033[0m          : Protein database for functional annotation
+ \033[38;2;112;48;160mMetaCyc\033[0m            : Metabolic pathway database
+
+\033[1;31mRequired Parameters:\033[0m 
+------------------
+\033[31m--inputDir\033[0m        : Directory containing quality filtered paired-end reads
+\033[31m--metadata\033[0m        : CSV file with sample metadata
+\033[31m--sampleIDcolumn\033[0m  : Column number containing sample IDs
+\033[31m--analysiscolumn\033[0m  : Column number for analysis grouping
+
+\033[33mOptional Parameters:\033[0m
+------------------
+\033[33m--cpus\033[0m            : Number of CPUs (default: 36)
+\033[33m--outdir\033[0m          : Output directory (default: ${launch_dir}/results/metagenome/WMS_FUNCTION)
+
+\033[38;2;0;255;255mOutput File Description:\033[0m
+-----------
+\033[38;2;0;255;255m- humann3/\033[0m               : Raw HUMAnN3 output files
+\033[38;2;0;255;255m- pathabund_join_renorm_cpm.tsv\033[0m : Normalized pathway abundances
+\033[38;2;0;255;255m- WMS_Function_result/\033[0m   : Statistical analysis results
+
+\033[1;36mDatabase Requirements:\033[0m
+------------------
+\033[33mHUMAnN3 databases\033[0m must be installed at:
+${db_baseDir}/humann3/
+
+\033[38;2;180;180;180mNote:\033[0m Results can be visualized using:
+\033[38;2;112;48;160mINTERACTIVE_COMPARATIVE\033[0m module

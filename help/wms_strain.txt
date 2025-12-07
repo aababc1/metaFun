@@ -1,0 +1,100 @@
+\033[38;2;138;43;226mWMS_STRAIN\033[0m
+
+Usage :
+    metafun -module WMS_STRAIN -ip <phyloseq.RDS> [-ir <input_reads_dir>] [-m <metadata>] [-s <sampleIDcolumn>]
+
+\033[38;2;138;43;226mWMS_STRAIN : Strain-level Microbial Diversity Analysis\033[0m
+=========================================================
+ \033[38;2;138;43;226minStrain\033[0m          : Strain-level population genomics from metagenomes
+ \033[38;2;138;43;226mBowtie2\033[0m           : Fast and accurate read alignment
+ \033[38;2;138;43;226mSamtools\033[0m          : BAM file processing and manipulation
+ \033[38;2;138;43;226mProdigal\033[0m          : Gene prediction from metagenomic sequences
+ \033[38;2;138;43;226meggNOG-mapper\033[0m     : Functional annotation with COG categories
+
+This module performs strain-level microbial diversity analysis using inStrain.
+It maps reads to reference genomes (from phyloseq-based prevalence filtering or custom references)
+and calculates:
+- Nucleotide diversity (pi)
+- Population ANI (popANI)
+- Consensus ANI (conANI)
+- SNV frequencies and linkage
+- Gene-level pN/pS ratios
+
+\033[1;31mRequired Parameters:\033[0m
+------------------
+\033[31m-ip, --input_phyloseq\033[0m : Phyloseq RDS file from WMS_TAXONOMY
+                     (e.g., results/metagenome/WMS_TAXONOMY/phyloseq/phyloseq_species.RDS)
+                     Used for prevalence-based genome selection
+
+
+\033[1;33mOptional Parameters:\033[0m
+------------------
+\033[33m-ir, --input_read\033[0m  : Directory containing quality filtered paired-end reads
+                     Typically output from RAWREAD_QC (read_filtered)
+                     (default: ${launch_dir}/results/metagenome/RAWREAD_QC/read_filtered)
+\033[33m-m, --metadata\033[0m     : CSV file with sample metadata (comma-separated format)
+                     If not provided, metadata is extracted from phyloseq sample_data()
+\033[33m-s, --sampleIDcolumn\033[0m : Column number in metadata file containing sample IDs (default: 1)
+\033[33m--prevalence_threshold\033[0m : Minimum % samples for prevalence filter (default: 5)
+\033[33m--min_abundance\033[0m    : Minimum relative abundance threshold (default: 0.001)
+\033[33m--min_read_ani\033[0m     : Minimum read ANI for filtering (default: 0.92)
+                     0.92 = strain-level, 0.95 = species-level, 0.99 = clonal
+\033[33m--min_coverage\033[0m     : Minimum coverage for variant calling (default: 5)
+\033[33m--min_freq\033[0m         : Minimum SNP frequency threshold (default: 0.05)
+\033[33m--fdr\033[0m              : FDR for SNV calling (default: 0.05)
+\033[33m--min_snp\033[0m          : Minimum SNPs for genome-wide calculations (default: 20)
+\033[33m--database_mode\033[0m    : Enable database mode for large references (default: true)
+\033[33m-p, --cpus\033[0m         : Number of CPUs to use (default: 20)
+\033[33m-o, --outdir\033[0m       : Output directory
+                     (default: ${launch_dir}/results/metagenome/WMS_STRAIN)
+
+
+\033[1;33mSkip Flags:\033[0m
+------------------
+\033[33m--skip_prevalence\033[0m  : Skip prevalence filtering, use existing files
+\033[33m--skip_genome_prep\033[0m : Skip genome preparation, use existing reference
+\033[33m--skip_annotation\033[0m  : Skip gene annotation, use existing files
+\033[33m--skip_instrain\033[0m    : Skip inStrain analysis
+
+
+\033[1;38;2;0;255;255mOutput File Description:\033[0m
+-----------------
+\033[38;2;0;255;255m- 01_prevalent_taxa/\033[0m    : Prevalence-filtered taxa from phyloseq results
+    - prevalent_taxa_genome_paths.txt : Paths to selected genome files
+    - prevalent_taxa_metadata.tsv     : Taxonomy metadata for selected taxa
+    - sample_metadata.csv             : Extracted or provided sample metadata
+\033[38;2;0;255;255m- 02_genome_prep/\033[0m       : Reference genome preparation
+    - all_genomes_combined.fa         : Concatenated reference FASTA
+    - prevalent_taxa.stb              : Scaffold-to-bin mapping
+    - bowtie2_index/                  : Bowtie2 index files
+\033[38;2;0;255;255m- 03_gene_annotation/\033[0m   : Gene annotations
+    - genes.fna                       : Prodigal gene sequences
+    - eggnog_results.emapper.annotations : eggNOG functional annotations
+\033[38;2;0;255;255m- 04_bam_files/\033[0m         : Sorted and indexed BAM files
+\033[38;2;0;255;255m- 05_instrain_profiles/\033[0m : Individual sample inStrain profiles
+    - genome_info.tsv                 : Genome-level metrics (coverage, breadth, nucl_diversity)
+    - scaffold_info.tsv               : Scaffold-level metrics
+    - SNVs.tsv                        : Single nucleotide variants
+    - gene_info.tsv                   : Gene-level metrics
+\033[38;2;0;255;255m- 06_instrain_compare/\033[0m  : Cross-sample comparison results
+    - genomeWide_compare.tsv          : Pairwise popANI and conANI values
+\033[38;2;0;255;255m- 07_shiny_data/\033[0m        : Pre-processed data for Shiny visualization
+    - integrated_microbiome_data.rds  : Combined diversity + metadata
+    - pN_pS_gene_level.rds            : Gene-level pN/pS calculations
+    - eggnog_annotations_subset.rds   : Filtered eggNOG annotations
+
+
+\033[1;36mPipeline Workflow:\033[0m
+------------------
+1. \033[33mPrevalence Filter\033[0m : Select prevalent taxa from phyloseq object
+2. \033[33mGenome Prep\033[0m      : Download genomes from GTDB, create STB, build Bowtie2 index
+3. \033[33mGene Annotation\033[0m  : Prodigal + eggNOG-mapper
+4. \033[33mBowtie2 Mapping\033[0m  : Map reads to reference genomes
+5. \033[33minStrain Profile\033[0m : Calculate strain-level metrics per sample
+6. \033[33minStrain Compare\033[0m : Calculate pairwise ANI between samples
+7. \033[33mShiny Aggregation\033[0m: Prepare data for interactive visualization
+
+
+\033[38;2;180;180;180mNote:\033[0m This module provides strain-level microbial diversity analysis.
+Results can be visualized using the \033[38;2;30;144;255mINTERACTIVE_STRAIN\033[0m module.
+

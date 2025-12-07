@@ -1,0 +1,623 @@
+{
+  "paths": [
+    {
+      "_path": "bin/metafun",
+      "path_type": "hardlink",
+      "sha256": "99d14e42986a0bc827ff5afb61ecb609a3a05de90a1ed7ebc899997f100d44a1",
+      "size_in_bytes": 66673
+    },
+    {
+      "_path": "share/metafun/config/nextflow.config",
+      "path_type": "hardlink",
+      "sha256": "1ae68a028c15ae9520560439a5090dff8997303f3e647fdc2a68cdcad6a2a53a",
+      "size_in_bytes": 6858
+    },
+    {
+      "_path": "share/metafun/db/download_db_metafun.py",
+      "path_type": "hardlink",
+      "sha256": "10e439098cc52952e3f4bfff1f0987914b03923923ea0bb203526919c201bbfa",
+      "size_in_bytes": 40803
+    },
+    {
+      "_path": "share/metafun/help/assembly_binning.txt",
+      "path_type": "hardlink",
+      "sha256": "1f44a5c2afcaadf7fec3d18502a9b835d91c5c47b122a2d839a628569883d833",
+      "size_in_bytes": 3104
+    },
+    {
+      "_path": "share/metafun/help/bin_assessment.txt",
+      "path_type": "hardlink",
+      "sha256": "619bab21f8b22aec5dc4a30c0a19635663ebdab73ed9e88127b897136c7810f5",
+      "size_in_bytes": 4526
+    },
+    {
+      "_path": "share/metafun/help/comparative_annotation.txt",
+      "path_type": "hardlink",
+      "sha256": "0a6caedfb32e638b0f641fe39003914a812719d13c3bda632db9e631c4423f25",
+      "size_in_bytes": 6089
+    },
+    {
+      "_path": "share/metafun/help/genome_selector.txt",
+      "path_type": "hardlink",
+      "sha256": "89610f588561a040a5a17a6cc5c036f4bd808c9fe7d185efb4477bc3da388d23",
+      "size_in_bytes": 3401
+    },
+    {
+      "_path": "share/metafun/help/imca.txt",
+      "path_type": "hardlink",
+      "sha256": "24e3060790f2eb816315137628ac6ef238aa87215adb85563f6fb171895cd1fc",
+      "size_in_bytes": 8364
+    },
+    {
+      "_path": "share/metafun/help/interactive_comparative.txt",
+      "path_type": "hardlink",
+      "sha256": "133dcc529e536c8eec79ca78e5dd9562ac402ec4115c48f454288bb0bf1f5105",
+      "size_in_bytes": 6047
+    },
+    {
+      "_path": "share/metafun/help/interactive_network.txt",
+      "path_type": "hardlink",
+      "sha256": "4573f0ecc975ad84bc47522fb63bddd926e86f339eb416fd7c852d18cf971e32",
+      "size_in_bytes": 3892
+    },
+    {
+      "_path": "share/metafun/help/interactive_strain.txt",
+      "path_type": "hardlink",
+      "sha256": "c4106048101a6b5846f8a7d3d3575bb4ecb917444a9006d86b068f9fe14fcf8f",
+      "size_in_bytes": 4057
+    },
+    {
+      "_path": "share/metafun/help/interactive_taxonomy.txt",
+      "path_type": "hardlink",
+      "sha256": "0f001677370ef50811d103239363c294c85676cc5c504aed780a94f3a71b803a",
+      "size_in_bytes": 3885
+    },
+    {
+      "_path": "share/metafun/help/logo.sh",
+      "path_type": "hardlink",
+      "sha256": "3dc00a1f24f469e1d8ef81c8224b130150f9afbd345f618a611400be9afb3411",
+      "size_in_bytes": 866
+    },
+    {
+      "_path": "share/metafun/help/logo.txt",
+      "path_type": "hardlink",
+      "sha256": "5966013dcdd406d2bbe0d8f2e0b41c3bba8d0946f4db6d451cd1523adb67466e",
+      "size_in_bytes": 2768
+    },
+    {
+      "_path": "share/metafun/help/param_map.cfg",
+      "path_type": "hardlink",
+      "sha256": "4624dbdb4d52bb8a210795664abab2fe51f098c423fde9f453ecef19fc1bebab",
+      "size_in_bytes": 1324
+    },
+    {
+      "_path": "share/metafun/help/rawread_qc.txt",
+      "path_type": "hardlink",
+      "sha256": "802a9551cd1ef9f6f8f186515e39d9999b6f6103f45a700c12162b0653899e6c",
+      "size_in_bytes": 2875
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_assembly_binning.txt",
+      "path_type": "hardlink",
+      "sha256": "ad0d05a3d85212c162190ffa7c7e8bd3333736add634c08f314ff0bc9b55badf",
+      "size_in_bytes": 564
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_bin_assessment.txt",
+      "path_type": "hardlink",
+      "sha256": "b3826ad8a70b2fb5f7eea74ca89b660356d40732ffeaf1bbc065a84c950d7a67",
+      "size_in_bytes": 522
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_comparative_annotation.txt",
+      "path_type": "hardlink",
+      "sha256": "f405b71d2ae77c96d12acd955133c85709978cf70b449056b9b252c7001b2add",
+      "size_in_bytes": 810
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_genome_selector.txt",
+      "path_type": "hardlink",
+      "sha256": "e24f5a40ac08064a165993f3e68d8fa3f3725a027fc0624dbd0f24141da18fcf",
+      "size_in_bytes": 564
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_imca.txt",
+      "path_type": "hardlink",
+      "sha256": "deab1b990918f74dcbf04e72001bb3357dfe07ac7eb8895dbd394e64a81550cc",
+      "size_in_bytes": 1590
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_imwt.txt",
+      "path_type": "hardlink",
+      "sha256": "e699daaadab5f380671cb407def8efaa04855a1d87c7ea0a85acadf7e9b69fac",
+      "size_in_bytes": 1248
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_interactive_network.txt",
+      "path_type": "hardlink",
+      "sha256": "c291a7c4f9e001b7ffa15e4a9e209760b79b33d4f80c2ee2ed0a0d0846bf3260",
+      "size_in_bytes": 569
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_interactive_strain.txt",
+      "path_type": "hardlink",
+      "sha256": "f1689d7510bb5cdcef62d5230feafa99750c015ccecd6c3122a5e0cdfc594772",
+      "size_in_bytes": 513
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_rawread_qc.txt",
+      "path_type": "hardlink",
+      "sha256": "0bcae87da361afc704786372bde24bce024988f25c4f04454ff283de02358fc6",
+      "size_in_bytes": 408
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_wms_function.txt",
+      "path_type": "hardlink",
+      "sha256": "d252098a4e3543320d94ccc6b37edcb707830be0a8e7bd709c01c4292993e6c4",
+      "size_in_bytes": 468
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_wms_strain.txt",
+      "path_type": "hardlink",
+      "sha256": "6c7f073a8742cfaa71acd698e2afd3be631d1f521f93e7918549ebe5fb4c39fb",
+      "size_in_bytes": 329
+    },
+    {
+      "_path": "share/metafun/help/slant_logo_wms_taxonomy.txt",
+      "path_type": "hardlink",
+      "sha256": "b53422e39db144f3fd214ba04f6e5d1518b6bbc4dd1c7a055b58f310b9abae50",
+      "size_in_bytes": 468
+    },
+    {
+      "_path": "share/metafun/help/wms_function.txt",
+      "path_type": "hardlink",
+      "sha256": "0311b3f8bf03db76f9ea52e996ad9218072919629e9bd7ba5103f3bfea2e0e6d",
+      "size_in_bytes": 1820
+    },
+    {
+      "_path": "share/metafun/help/wms_strain.txt",
+      "path_type": "hardlink",
+      "sha256": "6933ae3842b817b78446bd475fd733b03ceec2076fb0707e8e17bcc7c37e280b",
+      "size_in_bytes": 5882
+    },
+    {
+      "_path": "share/metafun/help/wms_taxonomy.txt",
+      "path_type": "hardlink",
+      "sha256": "7e055194829fab6f9cb7a7ccad1a379d465f71f2b2ce6effc474e9b4bf86b3dd",
+      "size_in_bytes": 3333
+    },
+    {
+      "_path": "share/metafun/nf_scripts/ASSEMBLY_BINNING_apptainer.nf",
+      "path_type": "hardlink",
+      "sha256": "82ebfcd9cdd932d393e753f6b935bc1a3a4b95e1fc84c40570c0e81526e44283",
+      "size_in_bytes": 15237
+    },
+    {
+      "_path": "share/metafun/nf_scripts/BIN_ASSESSMENT_apptainer.nf",
+      "path_type": "hardlink",
+      "sha256": "b33610fdbd8c03d8959e28363b9cc6bd97c7bf17bf8175113b996548af89603f",
+      "size_in_bytes": 23869
+    },
+    {
+      "_path": "share/metafun/nf_scripts/COMPARATIVE_ANNOTATION_apptainer.nf",
+      "path_type": "hardlink",
+      "sha256": "9669326e6a389f34b776819c82c94e5e05893dcda05220e5483baa38cfc6159c",
+      "size_in_bytes": 57183
+    },
+    {
+      "_path": "share/metafun/nf_scripts/RAWREAD_QC_apptainer.nf",
+      "path_type": "hardlink",
+      "sha256": "505f3c4c283aca4e07cda171885797749b3bbe35bf416eed614ca8f1dde3bd55",
+      "size_in_bytes": 10113
+    },
+    {
+      "_path": "share/metafun/nf_scripts/WMS_FUNCTION_apptainer.nf",
+      "path_type": "hardlink",
+      "sha256": "6196ea989d74c46424795920f43934e86ba285f06f9fd0c3496c116c0ccb1526",
+      "size_in_bytes": 8455
+    },
+    {
+      "_path": "share/metafun/nf_scripts/WMS_STRAIN_apptainer.nf",
+      "path_type": "hardlink",
+      "sha256": "976220c6ed1ea681a84dbe85b1eacfa9465e976654db43f9ff22cddf0f3f9e01",
+      "size_in_bytes": 59749
+    },
+    {
+      "_path": "share/metafun/nf_scripts/WMS_TAXONOMY_apptainer.nf",
+      "path_type": "hardlink",
+      "sha256": "dcbc3b2abc952d1a55034a83271458eeb96fa725e20913ded370424b074575f5",
+      "size_in_bytes": 12754
+    },
+    {
+      "_path": "share/metafun/scripts/BrackentaxID_GTDBtaxa_completed.csv",
+      "path_type": "hardlink",
+      "sha256": "cb067aac722f02a1059b303ca41287c9088a510b9d8412ffa3f20f078c8fefc6",
+      "size_in_bytes": 15083649
+    },
+    {
+      "_path": "share/metafun/scripts/CARD_visualization.R",
+      "path_type": "hardlink",
+      "sha256": "bb849b27f785abd6d8b29e2b67928171c94ccf37bd64d7f9e4f8ec386d1f770c",
+      "size_in_bytes": 13982
+    },
+    {
+      "_path": "share/metafun/scripts/Checkm2_GUNC_combine_quality_pass.py",
+      "path_type": "hardlink",
+      "sha256": "2263f5ec505b33779830b36cecae2fe8d8ac1f8ce1d9c926b9846a13263d9050",
+      "size_in_bytes": 3005
+    },
+    {
+      "_path": "share/metafun/scripts/GTDB_add2_check2gunc.py",
+      "path_type": "hardlink",
+      "sha256": "4fbc581005d0466be255ea2d1a5282eb43ed3e8a871b138b92a993dc96432d1a",
+      "size_in_bytes": 392
+    },
+    {
+      "_path": "share/metafun/scripts/KO_Genome_long2matrix.py",
+      "path_type": "hardlink",
+      "sha256": "65e1f197ba757f96e23ef4a89a6c4a0f592a86479026a5c140c58ec14356497c",
+      "size_in_bytes": 1451
+    },
+    {
+      "_path": "share/metafun/scripts/KO_Genome_long2matrix_ppanggolin205.py",
+      "path_type": "hardlink",
+      "sha256": "65e1f197ba757f96e23ef4a89a6c4a0f592a86479026a5c140c58ec14356497c",
+      "size_in_bytes": 1451
+    },
+    {
+      "_path": "share/metafun/scripts/KO_definition_GeneID_countgenomes.py",
+      "path_type": "hardlink",
+      "sha256": "3645bfdcbbb35811a6764ad7fb7263d86f51dcd26272a976d6558243305fb0ed",
+      "size_in_bytes": 2443
+    },
+    {
+      "_path": "share/metafun/scripts/KO_module_visualization_apptainer.R",
+      "path_type": "hardlink",
+      "sha256": "48a7b757e0e93b9b942b65bf408227e212c59268046c97c621513a2327466777",
+      "size_in_bytes": 15437
+    },
+    {
+      "_path": "share/metafun/scripts/VFDB_visualization.R",
+      "path_type": "hardlink",
+      "sha256": "5bbfe67c65eeb4c955b6f75dbf96b2626cfe54ad0939d6a9b62ea3a8fd480b0b",
+      "size_in_bytes": 12317
+    },
+    {
+      "_path": "share/metafun/scripts/add_VFDB_togenePA.py",
+      "path_type": "hardlink",
+      "sha256": "169fde71f45ffaf23b40bb13be1847902f06c276a03e6eb9fdda178d0f2063dd",
+      "size_in_bytes": 2468
+    },
+    {
+      "_path": "share/metafun/scripts/add_VFDB_togenecount.py",
+      "path_type": "hardlink",
+      "sha256": "2840423544f0508ed357a3ffe818a801d61fb639a9047fc715458a2210fb43bb",
+      "size_in_bytes": 2412
+    },
+    {
+      "_path": "share/metafun/scripts/add_rgi_togenePA.py",
+      "path_type": "hardlink",
+      "sha256": "e3f7065b030f64b76dfcd6bd87fcafb6b0686b288869d1e79310bcd724e08736",
+      "size_in_bytes": 2495
+    },
+    {
+      "_path": "share/metafun/scripts/combine_bracken_outputs.py",
+      "path_type": "hardlink",
+      "sha256": "d924a27ef69b0e6ccc7bf91089a0ac746d238dfd08791ad27d8e360e9ee28101",
+      "size_in_bytes": 5884
+    },
+    {
+      "_path": "share/metafun/scripts/combine_metadata_WMS_genome.py",
+      "path_type": "hardlink",
+      "sha256": "17f8ad824a26e3bbef28ebeb08160b03dc2ea3172b34fa42409808c3de993daa",
+      "size_in_bytes": 8073
+    },
+    {
+      "_path": "share/metafun/scripts/combine_metadata_WMS_genome_old.py",
+      "path_type": "hardlink",
+      "sha256": "30cf93b307670a7d85e608cd1e4194a22bafac9b87e15d2302102db975d13aa4",
+      "size_in_bytes": 1474
+    },
+    {
+      "_path": "share/metafun/scripts/combine_metadata_user_genome.py",
+      "path_type": "hardlink",
+      "sha256": "38e099d1453f333d19cbdf0de3aeef31999ec79f3ceaae79e67eda492444113c",
+      "size_in_bytes": 2725
+    },
+    {
+      "_path": "share/metafun/scripts/convert_species_TAXID_merged_syhph_mpa.py",
+      "path_type": "hardlink",
+      "sha256": "1544dc3c06430ff7febae7d0d78fed1a8e0e1908f3ca3a3ac85e75ec6f9b062e",
+      "size_in_bytes": 5990
+    },
+    {
+      "_path": "share/metafun/scripts/dash_MAG3.py",
+      "path_type": "hardlink",
+      "sha256": "c4b4c21ad5db545be269569b10b16ec606b1dce0f644a087afe62d2dcf3d4cbe",
+      "size_in_bytes": 47124
+    },
+    {
+      "_path": "share/metafun/scripts/dbcan_result_parse.py",
+      "path_type": "hardlink",
+      "sha256": "30cb7596238d649a9dc4d6df7a9d14c7b5a656c49b4b0201317c50b69f912a98",
+      "size_in_bytes": 2574
+    },
+    {
+      "_path": "share/metafun/scripts/dbcan_visualization.R",
+      "path_type": "hardlink",
+      "sha256": "cf107aadbbd5691a1926a1adbc25dcbeb097cca0587f073e9bb64534e2efc43c",
+      "size_in_bytes": 9698
+    },
+    {
+      "_path": "share/metafun/scripts/extract_frac_combined_bracken.py",
+      "path_type": "hardlink",
+      "sha256": "acc9949de740033b79c1d9bf7862e3e7c4e0906a5433e48ca2e819e85ab1518d",
+      "size_in_bytes": 1278
+    },
+    {
+      "_path": "share/metafun/scripts/genome_PA_stat.py",
+      "path_type": "hardlink",
+      "sha256": "47815a326f0dde88bf88c8e1103cf61249a63b9bc749e98779aa700c4061b89d",
+      "size_in_bytes": 18608
+    },
+    {
+      "_path": "share/metafun/scripts/gtdbr220_taxonomy_list_TaxID.tsv",
+      "path_type": "hardlink",
+      "sha256": "c8618643dfe5fafa9294f7e64fd0ab6a574e819359c4f136710bbc5117087cb0",
+      "size_in_bytes": 16780191
+    },
+    {
+      "_path": "share/metafun/scripts/humann3_visualization.R",
+      "path_type": "hardlink",
+      "sha256": "b882624503c57befbba5a7d745daed4f73e377e070bf7b02e22c561d109e0d89",
+      "size_in_bytes": 23732
+    },
+    {
+      "_path": "share/metafun/scripts/kofam_to_geneID_KO.py",
+      "path_type": "hardlink",
+      "sha256": "359647f74c483ad33d329763110eabf981bdbfd02b0701cbf2ecb8942dcc2d52",
+      "size_in_bytes": 1629
+    },
+    {
+      "_path": "share/metafun/scripts/kofam_to_geneID_KO_ppanggolin205.py",
+      "path_type": "hardlink",
+      "sha256": "0f1a5491ab45a63104fd92fbda81be43594dca8f11535c94fedd10bba0bbee9c",
+      "size_in_bytes": 2011
+    },
+    {
+      "_path": "share/metafun/scripts/make_gene_count_table_ppanggolin205.py",
+      "path_type": "hardlink",
+      "sha256": "1225f16010a67d32c31f001cec92dd4cca815228b0997867fe79f7688e89ac04",
+      "size_in_bytes": 2271
+    },
+    {
+      "_path": "share/metafun/scripts/make_scoary_binary_trait.py",
+      "path_type": "hardlink",
+      "sha256": "c718d4036ec76312b57faa4aa5b097eb28be5c992d3d18d37f4080466998a2b0",
+      "size_in_bytes": 1330
+    },
+    {
+      "_path": "share/metafun/scripts/phyloseq_WMS_taxa_analysis.R",
+      "path_type": "hardlink",
+      "sha256": "3ebb8434fa919c7fc971a5bf5b5b29ac0bbe8741b48522572bb3fdbee0409e9a",
+      "size_in_bytes": 15013
+    },
+    {
+      "_path": "share/metafun/scripts/phyloseq_creation.R",
+      "path_type": "hardlink",
+      "sha256": "56b19f2655edd3a53c97e00db23170bd0f7b9f69540dcef836eedec81e9ce4a4",
+      "size_in_bytes": 1523
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_COMPARATIVE_ANNOTATION.R",
+      "path_type": "hardlink",
+      "sha256": "53d9bd9e7966773723111a2c1a6ed737c76e704400032d1e40713714c9c4dc4f",
+      "size_in_bytes": 49427
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/app.R",
+      "path_type": "hardlink",
+      "sha256": "f30012510d14e761d0437dba6f231d85248e903a8f41b2d30b3a8333a993c183",
+      "size_in_bytes": 59938
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/data/sample_phyloseq.RDS",
+      "path_type": "hardlink",
+      "sha256": "773c1e8d7a369a406b81606befb59cc495e9035987d63f2a5419a5b7affef99b",
+      "size_in_bytes": 296484
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/helper/centrality_metrics.R",
+      "path_type": "hardlink",
+      "sha256": "de9407072befd6009981704024a62ff5addbf1b417588ee037c5fc9779eb3e0d",
+      "size_in_bytes": 31585
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/helper/data_conversion.R",
+      "path_type": "hardlink",
+      "sha256": "aee118d830605ef9fc99466c2fabee07e1764b9fdda2ae1941b5d86af5612376",
+      "size_in_bytes": 10684
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/helper/fast_correlation.R",
+      "path_type": "hardlink",
+      "sha256": "db8086106393a26d5f2793cde3dc01f440b8cc2abcdba97d928b2d0384c33edd",
+      "size_in_bytes": 6982
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/helper/fastspar_wrapper.R",
+      "path_type": "hardlink",
+      "sha256": "eda84a378b1811bbb1b94052836dab435fcc043dc36e4968dc8e85907def4f8d",
+      "size_in_bytes": 10528
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/helper/flashweave_wrapper.R",
+      "path_type": "hardlink",
+      "sha256": "15d35df54cb1535a7747b5ca3a648a80d6d84843a7be23c3df39388a2baadf54",
+      "size_in_bytes": 10730
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/helper/network_utils.R",
+      "path_type": "hardlink",
+      "sha256": "81656009a1d1208336484a627af5e5105a6326273eecc005a018a65474f9da88",
+      "size_in_bytes": 25081
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/helper/plot_download_helper.R",
+      "path_type": "hardlink",
+      "sha256": "bea2cb4e3842c0bb7bcb6d2375b66b1c1c55efe31941a1943b8cab011ba3ac94",
+      "size_in_bytes": 16570
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/modules/data_loading_module.R",
+      "path_type": "hardlink",
+      "sha256": "cb5aa577c49c4844675cbc613b97b3d029691b1586752a9d0adfcad0b5dd0792",
+      "size_in_bytes": 12600
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/modules/filtering_module.R",
+      "path_type": "hardlink",
+      "sha256": "03d9d1b9fe1b7816278d95cd44e1a3bf15cdaeb946746f5dd5b60fb9e8b66659",
+      "size_in_bytes": 864
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/modules/influential_nodes_module.R",
+      "path_type": "hardlink",
+      "sha256": "8c42229aa558f6fb657723ba7672d654cf2faeb51d15465e15665d08da17aad6",
+      "size_in_bytes": 41227
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/modules/network_analysis_module.R",
+      "path_type": "hardlink",
+      "sha256": "51cbee84d6fc1e94332f1a2d1289befa9887bab1adda61bd5a9418e1e013e3f7",
+      "size_in_bytes": 33759
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/modules/network_robustness_module.R",
+      "path_type": "hardlink",
+      "sha256": "00c51e4814f2f1d00e39c7f609b7476221a63ff8ca83f3a58ba6e0bc687637b9",
+      "size_in_bytes": 18198
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_network/modules/network_visualization_module.R",
+      "path_type": "hardlink",
+      "sha256": "9598c5bfedc70dccac651b13eaf4410afb1e247ef05663244d01d692b936820e",
+      "size_in_bytes": 53819
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/app.R",
+      "path_type": "hardlink",
+      "sha256": "a57b4a286e54d17e45c916179ba8499a3c9e5bbfbf9703ed0c793171446e30e9",
+      "size_in_bytes": 15895
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/helper/error_handlers.R",
+      "path_type": "hardlink",
+      "sha256": "cfc89727de93436a715336c7d2b0ca3f041e15eea55d7d80041cff6fd66f8b4c",
+      "size_in_bytes": 1754
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/helper/plot_customization.R",
+      "path_type": "hardlink",
+      "sha256": "033c258b8d33754ae975181fdcbae4179b82d906bff68580dadfda9a12644d81",
+      "size_in_bytes": 15883
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/diversity_pnps_correlation_module.R",
+      "path_type": "hardlink",
+      "sha256": "f64d4002a62d1e1392457e4d6b6900ef636b07b4c4643e2fe7989600a1845dca",
+      "size_in_bytes": 33866
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/gene_level_pnps_module.R",
+      "path_type": "hardlink",
+      "sha256": "467faf6ce7a35568b2c0d94f11a92d4a68cddfdfea48f06e9c9cb29525fbc6f0",
+      "size_in_bytes": 106017
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/gene_level_pnps_preprocessing_optimized.R",
+      "path_type": "hardlink",
+      "sha256": "1a549e6bde595521da68a4a6e14659ac1e316fb3c64a36dfecbd75bfdfa359bd",
+      "size_in_bytes": 4653
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/nucleotide_diversity_module.R",
+      "path_type": "hardlink",
+      "sha256": "16c2ed0b354896a82f5d11805b3eb4111efa64f3b86f3c26bfa5f281c23d35ad",
+      "size_in_bytes": 180824
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/nucleotide_diversity_stats_helpers.R",
+      "path_type": "hardlink",
+      "sha256": "3c30803e2cff4a8674f8af482202d8c38fa5db0125ebae66c07f89861f016c61",
+      "size_in_bytes": 11428
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/pnps_module_quick.R",
+      "path_type": "hardlink",
+      "sha256": "8b7ff60f41a581f7f15373db197d2a0989eeb8842de275bf2e48d4c57e5f3096",
+      "size_in_bytes": 29442
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/pnps_preprocessing_optimized.R",
+      "path_type": "hardlink",
+      "sha256": "8870763a96a93df73c3dee9de79d05bf314a3223ace1133fbbf15500c9845d65",
+      "size_in_bytes": 10535
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/preprocessing_scripts.R",
+      "path_type": "hardlink",
+      "sha256": "8beacb18bacf5a381f60b0232b60907e0fb164716e387e4bc777ad3414365207",
+      "size_in_bytes": 12548
+    },
+    {
+      "_path": "share/metafun/scripts/shiny_strain/modules/shared_taxa_module.R",
+      "path_type": "hardlink",
+      "sha256": "e36060b05bd463fcbe0e853cf0f3d83ac9c8e4ffd97ffe90a4953c045f301255",
+      "size_in_bytes": 168049
+    },
+    {
+      "_path": "share/metafun/scripts/skani_visualization.R",
+      "path_type": "hardlink",
+      "sha256": "d4688860f37408041f24f196ac53038d9b30f70123964702f36b260bc866aa07",
+      "size_in_bytes": 5452
+    },
+    {
+      "_path": "share/metafun/scripts/sylph-utils/LICENSE",
+      "path_type": "hardlink",
+      "sha256": "abc17888114a3563f54a02c11eaa073db813891d0a9d2787599082e8f4fcd844",
+      "size_in_bytes": 1065
+    },
+    {
+      "_path": "share/metafun/scripts/sylph-utils/README.md",
+      "path_type": "hardlink",
+      "sha256": "ed1eb5b056adbd128a6020775d8ba3d442871e5e6e890e38a9f757575f0f2396",
+      "size_in_bytes": 3762
+    },
+    {
+      "_path": "share/metafun/scripts/sylph-utils/gtdbr220_taxonomy_list_TaxID.tsv",
+      "path_type": "hardlink",
+      "sha256": "c8618643dfe5fafa9294f7e64fd0ab6a574e819359c4f136710bbc5117087cb0",
+      "size_in_bytes": 16780191
+    },
+    {
+      "_path": "share/metafun/scripts/sylph-utils/merge_sylph_taxprof.py",
+      "path_type": "hardlink",
+      "sha256": "c18709d4fa0edb355849c38ac665e1600fae557772b957b6f1d59736f2e77b02",
+      "size_in_bytes": 1633
+    },
+    {
+      "_path": "share/metafun/scripts/sylph-utils/sylph_to_taxprof.py",
+      "path_type": "hardlink",
+      "sha256": "9e89aef7c856e9faf046fe7f894f89ccbc30e1f470ff91f55f90b6e36aedb86b",
+      "size_in_bytes": 6924
+    },
+    {
+      "_path": "share/metafun/sif_images/.placeholder",
+      "path_type": "hardlink",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_in_bytes": 0
+    }
+  ],
+  "paths_version": 1
+}

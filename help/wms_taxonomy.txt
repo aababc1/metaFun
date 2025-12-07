@@ -1,0 +1,64 @@
+\033[1;38;2;8;70;250mWMS_TAXONOMY\033[0m
+
+Usage :
+    metafun -module WMS_TAXONOMY --inputDir "${filtered_reads_dir}" --metadata "${metadata_file}" --sampleIDcolumn <column_number> --analysiscolumn <column_number>
+
+\033[1;38;2;8;70;250mWMS_TAXONOMY : Taxonomic profiling of whole metagenome sequencing data\033[0m
+=========================================================
+ \033[38;2;8;70;250mKraken2\033[0m           : Fast taxonomic classification using k-mer matching
+ \033[38;2;8;70;250mBracken\033[0m           : Abundance estimation from Kraken2 results
+ \033[38;2;8;70;250mSylph\033[0m             : Fast and accurate taxonomic profiling
+
+This module performs taxonomic profiling of metagenomic reads using either Kraken2 or Sylph.
+
+\033[1;31mRequired Parameters:\033[0m 
+------------------
+\033[31m--inputDir\033[0m         : Directory containing quality filtered paired-end reads
+                     Typically output from RAWREAD_QC (read_filtered)
+\033[31m--metadata\033[0m         : CSV file with sample metadata (comma-separated format)
+\033[31m--sampleIDcolumn\033[0m   : Column number in metadata file containing sample IDs
+\033[31m--profiler\033[0m         : Taxonomic profiler to use
+                     Available options: kraken2, sylph
+                     (Kraken2 is used with Bracken )
+
+
+\033[1;33mOptional Parameters:\033[0m 
+------------------
+\033[33m--analysiscolumn\033[0m   : Column number for statistical analysis grouping
+\033[33m--kraken_method\033[0m    : Kraken2 execution method (default: default)
+                     Available options: default, memory-mapping
+\033[33m--confidence_filter\033[0m : Confidence threshold for Kraken2 (default: 0.1)
+\033[33m--relab_filter\033[0m     : Relative abundance filter for Bracken (default: 0.0001)
+\033[33m--sylph_abundance_type\033[0m : Abundance type for Sylph (default: relative_abundance)
+\033[33m--cpus\033[0m             : Number of CPUs to use (default: 15)
+\033[33m--outdir\033[0m           : Output directory 
+                     (default: ${launch_dir}/results/metagenome/WMS_TAXONOMY)
+
+
+\033[1;38;2;0;255;255mOutput File Description:\033[0m
+-----------------
+\033[38;2;0;255;255m- kraken2/\033[0m          : Kraken2 classification results
+\033[38;2;0;255;255m- bracken/\033[0m          : Bracken abundance estimates
+\033[38;2;0;255;255m- sylph/\033[0m            : Sylph profiling results
+\033[38;2;0;255;255m- phyloseq/\033[0m         : Phyloseq objects for R analysis
+\033[38;2;0;255;255m- stats_analysis/\033[0m    : Statistical analysis results (if --analysiscolumn specified)
+
+
+\033[1;36mDatabase Information:\033[0m
+------------------
+\033[33mKraken2\033[0m            : GTDB r220 reference database
+\033[33mSylph\033[0m              : GTDB r220 reference database
+
+
+\033[1;36mSelected Parameters:\033[0m
+------------------
+\033[33mInput Directory:\033[0m    %INPUT_DIR%
+\033[33mMetadata File:\033[0m      %METADATA%
+\033[33mSample ID Column:\033[0m   %SAMPLEID_COL%
+\033[33mAnalysis Column:\033[0m    %ANALYSIS_COL%
+\033[33mTaxonomic Profiler:\033[0m %PROFILER%
+\033[33mCPUs Used:\033[0m         %CPUS%
+\033[33mOutput Directory:\033[0m   %OUTPUT_DIR%
+
+\033[38;2;180;180;180mNote:\033[0m This module provides taxonomic profiling of metagenomic reads.
+Results can be visualized using \033[38;2;180;180;180mINTERACTIVE_TAXONOMY module \033[0m

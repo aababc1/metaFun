@@ -1,0 +1,39 @@
+{
+  "info": {
+    "subdir": "noarch"
+  },
+  "packages": {},
+  "packages.conda": {
+    "metafun-1.0.0-0.conda": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [
+        "apptainer 1.3.0.*",
+        "dash 2.17.1.*",
+        "dash-bootstrap-components",
+        "dash-core-components",
+        "dash-daq",
+        "dash-html-components",
+        "dash-table",
+        "nextflow 24.04.2.*",
+        "numpy >=1.26",
+        "pandas >=2.0",
+        "plotly >=5.0",
+        "python >=3.10",
+        "sylph 0.6.1.*",
+        "tqdm"
+      ],
+      "license": "MIT",
+      "md5": "33f9dab362f8a870d0b66687a1c1dc18",
+      "name": "metafun",
+      "noarch": "generic",
+      "sha256": "da0e121e99c6939499e6b0979c1269474c6c5fd80bb91d4f53e268bb399f38fd",
+      "size": 13013040,
+      "subdir": "noarch",
+      "timestamp": 1764916592228,
+      "version": "1.0.0"
+    }
+  },
+  "removed": [],
+  "repodata_version": 1
+}

@@ -1,0 +1,102 @@
+\033[1;38;2;30;144;255mINTERACTIVE_STRAIN\033[0m
+
+Usage :
+    metafun -module INTERACTIVE_STRAIN -i <WMS_STRAIN_shiny_data_dir>
+
+\033[1;38;2;30;144;255mINTERACTIVE_STRAIN\033[0m : Interactive visualization and analysis of \033[38;2;138;43;226mWMS_STRAIN\033[0m results
+=========================================================
+\033[1m1. Diversity Overview\033[0m
+   - Nucleotide Diversity (pi): Visualize within-sample diversity across genomes
+   - Coverage Analysis: Examine genome coverage and breadth across samples
+   - Sample Comparison: Compare diversity metrics between sample groups
+
+\033[1m2. ANI Comparison\033[0m
+   - Population ANI (popANI): Pairwise strain similarity between samples
+   - Consensus ANI (conANI): Consensus-based strain comparison
+   - Heatmap Visualization: Interactive heatmaps of ANI values
+   - Metadata Integration: Color samples by metadata variables
+
+\033[1m3. pN/pS Analysis\033[0m
+   - Genome-wide pN/pS: Selection pressure across entire genomes
+   - Gene-level pN/pS: Selection pressure for individual genes
+   - COG Category Analysis: pN/pS distribution by functional category
+   - Statistical Comparison: Compare selection pressure between groups
+
+\033[1m4. SNV Analysis\033[0m
+   - SNV Frequency Distribution: Examine SNV frequencies across samples
+   - SNV Density: SNVs per kilobase across genomes
+   - Variant Type Analysis: Distribution of SNV types
+
+\033[1m5. Gene Function Explorer\033[0m
+   - COG Annotation: Explore gene functions by COG category
+   - Gene Selection: Identify genes under positive/negative selection
+   - Functional Enrichment: Analyze overrepresented functions
+
+This module provides a comprehensive web interface to explore and analyze strain-level
+microbial diversity results from WMS_STRAIN with interactive visualizations.
+
+\033[1mWe recommend you to use Visual Studio Code with Remote - SSH to run this module.\033[0m
+ https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh
+
+
+\033[1;31mRequired Parameters:\033[0m
+------------------
+\033[31m-i, --input\033[0m          : Input directory with WMS_STRAIN shiny data
+                     (e.g., results/metagenome/WMS_STRAIN/07_shiny_data)
+                     Must contain: integrated_microbiome_data.rds
+
+
+\033[1;33mOptional Parameters:\033[0m
+------------------
+\033[33m-o, --output\033[0m         : Output directory for exported files
+                     (default: results/interactive_strain)
+
+
+\033[1;38;2;0;255;255mCommand Example:\033[0m
+-----------------
+    metafun -module INTERACTIVE_STRAIN -i results/metagenome/WMS_STRAIN/07_shiny_data
+
+
+\033[1;38;2;0;255;255mRequired Input Files:\033[0m
+-----------------
+The input directory should contain:
+    - integrated_microbiome_data.rds  : Combined diversity, ANI, and metadata
+    - pN_pS_gene_level.rds            : Gene-level pN/pS calculations (optional)
+    - pN_pS_genome_wide.rds           : Genome-wide pN/pS calculations (optional)
+    - eggnog_annotations_subset.rds   : COG annotations (optional)
+
+
+\033[1;38;2;0;255;255mUsage Instructions:\033[0m
+-----------------
+1. Diversity Overview
+   - Select genome(s) to analyze
+   - Choose diversity metric (nucleotide diversity, coverage, breadth)
+   - Group samples by metadata variable
+   - Generate boxplots and statistical comparisons
+
+2. ANI Comparison
+   - Select ANI type (popANI or conANI)
+   - Choose samples to compare
+   - Generate heatmap with hierarchical clustering
+   - Export distance matrices
+
+3. pN/pS Analysis
+   - View genome-wide or gene-level pN/pS
+   - Filter by COG category
+   - Compare between sample groups
+   - Identify genes under selection
+
+4. SNV Analysis
+   - Explore SNV distributions
+   - Filter by frequency threshold
+   - Compare SNV density across genomes
+
+5. Export Options
+   - Download publication-ready figures
+   - Export data tables in CSV format
+   - Save filtered results
+
+
+\033[38;2;180;180;180mNote:\033[0m This module requires results from \033[38;2;138;43;226mWMS_STRAIN\033[0m module.
+All visualizations can be exported as publication-ready figures.
+
