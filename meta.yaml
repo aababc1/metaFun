@@ -4,7 +4,8 @@ package:
   version: "1.0.0"
 
 source:
-  path: .
+  url: https://github.com/aababc1/metaFun/archive/refs/tags/v1.0.0.tar.gz
+  sha256: dfca37ef6626a851b1088126b08d0c41a5637eea1080e3c076f49fb34b6b0aaa
 
 build:
   number: 0
@@ -36,8 +37,13 @@ test:
 about:
   home: https://github.com/aababc1/metaFun
   license: MIT
-  summary: Custom package for metaFun workflow management
+  license_file: LICENSE
+  summary: Scalable and agile analysis pipeline for metagenomic and comparative genomic
+  analysis
   description: |
-    A comprehensive package that includes custom scripts and workflows
-    for metaFun analysis pipeline. Version 1.0.0 adds WMS_STRAIN module
-    for strain-level microbial diversity analysis using inStrain.
+    metaFun is a comprehensive pipeline for metagenomic analysis including
+    quality control, assembly, binning, taxonomy profiling, and functional analysis.
+    Version 1.0.0 adds WMS_STRAIN module for strain-level microbial diversity analysis.
+  doc_url: https://metafun-doc.readthedocs.io/
+  dev_url: https://github.com/aababc1/metaFun
+
