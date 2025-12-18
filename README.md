@@ -15,6 +15,5 @@ https://metafun-doc.readthedocs.io/en/latest/index.html
 
 # FAQ  
 Please  use "Issues tab in this page"  or  ask in slack .
-![Uploading image.png…]()
 https://join.slack.com/t/metafun1/shared_invite/zt-3jud1l51y-fyhyco0tuRlxODet~O6~7w
 
