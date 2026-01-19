@@ -9,7 +9,8 @@ A scalable and agile analysis pipeline for **meta**genomic big data with fast an
 
 <img width="217" height="195" alt="image" src="https://github.com/user-attachments/assets/ad33f6ef-6ee9-477b-8fc2-bd18ce205baf" />
 
-![metaFun Pipeline Overview](docs/images/pipeline_overview.png)
+<img width="2550" height="3300" alt="pipeline_flowchart renew" src="https://github.com/user-attachments/assets/1e673042-d22b-4574-a511-c98ac5df8e38" />
+
 
 
 
