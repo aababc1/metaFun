@@ -1,4 +1,11 @@
 # metaFun : pipeline for metagenomic data analysis
+[![DOI](https://img.shields.io/badge/DOI-10.1080%2F19490976.2025.2611544-blue)](https://doi.org/10.1080/19490976.2025.2611544)
+[![Conda](https://img.shields.io/conda/v/bioconda/metafun)](https://anaconda.org/bioconda/metafun)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation](https://img.shields.io/badge/docs-readthedocs-blue)](https://metafun-doc.readthedocs.io/)
+
+A scalable and agile analysis pipeline for **meta**genomic big data with fast and unified **Fun**ctional searches.
+
 
 <img width="272" height="244" alt="image" src="https://github.com/user-attachments/assets/ad33f6ef-6ee9-477b-8fc2-bd18ce205baf" />
 
