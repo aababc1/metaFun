@@ -32,8 +32,6 @@ metafun -module DOWNLOAD_DB
 metafun -module RAWREAD_QC  -i input_reads/
 ```
 
-## metaFun pipeline flowchart
-<img width="1225" height="1665" alt="pipeline_flowchart renew" src="https://github.com/user-attachments/assets/1e673042-d22b-4574-a511-c98ac5df8e38" />
 
 
 # Documentation 📖 
@@ -44,6 +42,9 @@ https://metafun-doc.readthedocs.io/en/latest/index.html
 # FAQ  
 Please  use "Issues tab in this page"  or  ask in slack .
 https://join.slack.com/t/metafun1/shared_invite/zt-3jud1l51y-fyhyco0tuRlxODet~O6~7w
+
+## metaFun pipeline flowchart
+<img width="600" height="800" alt="pipeline_flowchart renew" src="https://github.com/user-attachments/assets/1e673042-d22b-4574-a511-c98ac5df8e38" />
 
 
 ## Support & Contact
