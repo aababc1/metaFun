@@ -103,6 +103,17 @@ nextflow run ~/metaFun/nf_scripts/RAWREAD_QC_cleanifier.nf -c ~/metaFun/config/k
 Process names in `trace.txt`: `load_index` (once per run, only with shared memory), `fastp_cleanifier`
 (one per run, `tag` = run accession), `qc_summary` (one per cohort).
 
+## Submitting every cohort
+
+`scripts/rawreadqc/kbds_submit_all.sh` is an idempotent driver (dry run by default, `SUBMIT=1` to
+submit): per cohort it counts dumped FASTQ pairs and `.done` markers, skips finished cohorts and
+cohorts with a `qc_<cohort>` job already queued, builds the samplesheet (excluding
+`manifest/fastq_check/<cohort>.bad_runs.txt` when present), splits cohorts whose estimate exceeds
+`CHUNK_H` (24 h at 7.9 s/Gb) into balanced chunks `runs/qc/<cohort>.<k>/`, fills partitions in order
+(`PARTITIONS="cpu32-only:5 cpu64-only:5"`), and submits `kbds_test_qc.sbatch` with `-t` =
+estimate x 2 + 1 h (capped at 120 h). `ALLOW_PARTIAL=1` submits cohorts whose dump is incomplete;
+re-running the driver later submits a job for the remaining runs (skip_done).
+
 ## Checking the dumped FASTQ first
 
 `scripts/rawreadqc/check_fastq_integrity.sh <cohort|all>` (run it on a compute node, e.g.
