@@ -3,13 +3,19 @@
 # (seconds of CPU, a few MB of data; no real analysis). Checks, in order:
 #   1. glibc / conda env / tool versions (cleanifier needs Python>=3.12 + numba on glibc 2.17)
 #   2. tiny custom Cleanifier index (so the real 7 GB human index is not needed for the test)
-#   3. fastp -> two named pipes -> cleanifier filter -> bgzip, exactly as the Nextflow task does it
+#   3. fastp -> FIFO -> mbuffer -> FIFO -> cleanifier filter -> bgzip, exactly as the Nextflow task does it
 #   4. shared-memory index: cleanifier load / filter --shared / cleanifier remove
 #   5. Nextflow starts offline and the workflow parses (--help)
 # Usage:  bash kbds_login_check.sh [conda_env_name_or_path]   (default: metacrc-qc)
 set -uo pipefail
 
 ENV_NAME=${1:-metacrc-qc}
+# conda.sh: personal miniconda first, then the system one (override with CONDA_SH=...)
+if [ -z "${CONDA_SH:-}" ]; then
+    for c in "$HOME/miniconda3/etc/profile.d/conda.sh" "$HOME/miniforge3/etc/profile.d/conda.sh" /apps/application/miniconda3/etc/profile.d/conda.sh; do
+        [ -f "$c" ] && CONDA_SH=$c && break
+    done
+fi
 CONDA_SH=${CONDA_SH:-/apps/application/miniconda3/etc/profile.d/conda.sh}
 METAFUN=${METAFUN:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 WORK=${TMPDIR:-$HOME/tmp}/metacrc_qc_check.$$
@@ -24,7 +30,7 @@ step "1. environment"
 echo "  host: $(hostname)   glibc: $(ldd --version 2>&1 | head -n 1)"
 if [ -f "$CONDA_SH" ]; then source "$CONDA_SH"; fi
 if conda activate "$ENV_NAME" 2>/dev/null; then ok "conda activate $ENV_NAME"; else bad "conda activate $ENV_NAME (CONDA_SH=$CONDA_SH)"; fi
-for t in python3 cleanifier fastp bgzip nextflow java; do
+for t in python3 cleanifier fastp bgzip mbuffer nextflow java; do
     if command -v $t >/dev/null 2>&1; then echo "  $t: $(command -v $t)"; else bad "$t not on PATH"; fi
 done
 python3 --version 2>&1 | sed 's/^/  /'
@@ -33,6 +39,12 @@ fastp --version 2>&1 | sed 's/^/  /'
 bgzip --version 2>&1 | head -n 1 | sed 's/^/  /'
 java -version 2>&1 | head -n 1 | sed 's/^/  /'
 cleanifier filter --help > cleanifier_filter_help.txt 2>&1 && ok "cleanifier filter --help saved to $WORK/cleanifier_filter_help.txt" || bad "cleanifier filter --help"
+fastp --help > fastp_help.txt 2>&1
+missing=""; for o in detect_adapter_for_pe trim_poly_g cut_front cut_tail cut_window_size cut_mean_quality length_required n_base_limit dont_eval_duplication report_title; do
+    grep -q -- "--$o " fastp_help.txt || missing="$missing --$o"
+done
+[ -z "$missing" ] && ok "fastp accepts every option used in params.fastp_args" || bad "fastp lacks:$missing (adjust --fastp_args)"
+grep -qi "dedup" fastp_help.txt && echo "  fastp dedup: $(grep -m1 -- '--dedup ' fastp_help.txt | sed 's/^ *//' | cut -c1-80)"
 python3 -c "import numba, numpy; print('  numba', numba.__version__, 'numpy', numpy.__version__)" || bad "numba import"
 
 step "2. tiny index + synthetic reads"
@@ -60,23 +72,25 @@ else
     bad "cleanifier index failed (see $WORK/index.log)"; tail -n 5 index.log
 fi
 
-step "3. fastp -> named pipes -> cleanifier filter -> bgzip (as in the Nextflow task)"
-mkfifo t_fp_1.fastq t_fp_2.fastq
+step "3. fastp -> FIFO -> mbuffer -> FIFO -> cleanifier filter -> bgzip (as in the Nextflow task)"
+mkfifo t_1.raw t_2.raw t_fp_1.fastq t_fp_2.fastq
 t0=$(date +%s)
-fastp --in1 t_1.fastq.gz --in2 t_2.fastq.gz --out1 t_fp_1.fastq --out2 t_fp_2.fastq --thread 2 \
+mbuffer -q -f -m 64M -s 1M -i t_1.raw -o t_fp_1.fastq 2> mbuf1.log &
+mbuffer -q -f -m 64M -s 1M -i t_2.raw -o t_fp_2.fastq 2> mbuf2.log &
+fastp --in1 t_1.fastq.gz --in2 t_2.fastq.gz --out1 t_1.raw --out2 t_2.raw --thread 2 \
     --detect_adapter_for_pe --trim_poly_g --cut_front --cut_tail --cut_window_size 4 --cut_mean_quality 20 \
     --length_required 50 --n_base_limit 5 --dont_eval_duplication --json t.fastp.json --html t.fastp.html 2> t.fastp.log &
 fp=$!
-cleanifier filter --index tinyhost --fastq t_fp_1.fastq --pairs t_fp_2.fastq --out "$WORK/.t.part" \
+timeout 600 cleanifier filter --index tinyhost --fastq t_fp_1.fastq --pairs t_fp_2.fastq --out "$WORK/.t.part" \
     --threads 3 --compression gz --compression-threads 1 --compression-level 4 > t.cleanifier.log 2>&1
-rc_cl=$?; wait $fp; rc_fp=$?
+rc_cl=$?; wait $fp; rc_fp=$?; wait
 echo "  cleanifier rc=$rc_cl fastp rc=$rc_fp wall=$(( $(date +%s) - t0 )) s (includes numba JIT compile)"
-rm -f t_fp_1.fastq t_fp_2.fastq
+rm -f t_1.raw t_2.raw t_fp_1.fastq t_fp_2.fastq
 grep -A1 -E "^prefix\s+keep\s+filter" t.cleanifier.log | sed 's/^/  /'
 if [ $rc_cl -eq 0 ] && [ $rc_fp -eq 0 ] && [ -s .t.part_1_keep.fastq.gz ] && [ -s .t.part_2_keep.fastq.gz ]; then
     ok "pipe chain produced .t.part_{1,2}_keep.fastq.gz"
 else
-    bad "pipe chain (see $WORK/t.cleanifier.log, t.fastp.log)"
+    bad "pipe chain (see $WORK/t.cleanifier.log, t.fastp.log, mbuf*.log)"
 fi
 if python3 "$METAFUN/scripts/rawreadqc/run_summary.py" --run t --sample s --cohort c --fastp-json t.fastp.json \
       --cleanifier-log t.cleanifier.log --fastq .t.part_1_keep.fastq.gz .t.part_2_keep.fastq.gz --expected-bases 600000 > t.qc.tsv; then
@@ -102,8 +116,8 @@ if [ ! -e /dev/shm/tinyhost ]; then ok "cleanifier remove deleted /dev/shm/tinyh
 
 step "5. Nextflow offline start + workflow parse"
 if nextflow -version > nf_version.txt 2>&1; then ok "nextflow -version: $(grep -m1 version nf_version.txt | xargs)"; else bad "nextflow -version"; tail -n 3 nf_version.txt; fi
-if nextflow run "$METAFUN/nf_scripts/RAWREAD_QC_cleanifier.nf" -c "$METAFUN/config/nextflow.config" -profile kbds --help > nf_help.txt 2>&1; then
-    ok "workflow parses with -profile kbds (--help)"
+if nextflow run "$METAFUN/nf_scripts/RAWREAD_QC_cleanifier.nf" -c "$METAFUN/config/kbds.config" -profile kbds --help > nf_help.txt 2>&1; then
+    ok "workflow parses with -c config/kbds.config -profile kbds (--help)"
 else
     bad "workflow --help failed (see $WORK/nf_help.txt)"; tail -n 8 nf_help.txt
 fi

@@ -7,7 +7,7 @@
  *
  * Designed for an HPC node that is billed per node and cannot run containers
  * (e.g. KISTI K-BDS): one `nextflow run` per node with the local executor
- * (-profile kbds in config/nextflow.config). Compared with RAWREAD_QC_apptainer.nf:
+ * (-c config/kbds.config -profile kbds). Compared with RAWREAD_QC_apptainer.nf:
  *   - input is a per-cohort samplesheet (CSV) instead of a directory glob
  *   - fastp and Cleanifier are connected by two named pipes, so trimmed reads
  *     are never gzip-compressed and re-read between the two tools
@@ -15,6 +15,9 @@
  *     destination directory) and a `<run>.done` marker is written last, so an
  *     external monitor can rely on marker files instead of publishDir timing
  *   - no FastQC/MultiQC (fastp JSON/HTML per run + one cohort summary TSV)
+ *
+ * Written in Nextflow's strict syntax: requires Nextflow >= 25.04 (with
+ * NXF_SYNTAX_PARSER=v2 on 25.x; default parser from 26.x). Tested with 26.10.3.
  *
  * Samplesheet columns (header required; base_count optional = SRA bases, used to detect truncated input):
  *   run_accession,sample_accession,cohort_accession,fastq_1,fastq_2[,base_count]
@@ -26,36 +29,37 @@
  *   <outdir>/<cohort>/<cohort>.qc_summary.tsv                  one row per run
  */
 
-nextflow.enable.dsl = 2
-
 // ---------------------------------------------------------------------------
 // Parameters (defaults; -profile kbds overrides some of them, CLI overrides all)
 // ---------------------------------------------------------------------------
-params.samplesheet          = null
-params.outdir               = "${launchDir}/results/metagenome/RAWREAD_QC"
-params.cleanifier_index     = null      // prefix of <index>.filter + <index>.info (e.g. ~/metaCRC/db/cleanifier/human)
-params.cleanifier_shared    = false     // load the index once per node into /dev/shm (cleanifier load/--shared)
-params.cleanifier_sensitive = false     // --sensitive: query every k-mer instead of sampling (slower)
-params.cleanifier_threshold = 0.5       // fraction of read bases covered by indexed k-mers -> read pair removed
-params.cpus                 = 4         // Nextflow cpus per task (slot accounting on the node)
-params.fastp_threads        = 2         // fastp -w (worker threads; fastp adds its own reader/writer threads)
-params.cleanifier_threads   = 3         // cleanifier --threads (= 1 reader + 1 writer + N-2 classifier threads)
-params.gz_threads           = 1         // cleanifier --compression-threads -> bgzip -@ per output file (2 files)
-params.gz_level             = 4         // cleanifier --compression-level -> bgzip -l (1 fastest .. 9)
-params.fastp_args           = '--detect_adapter_for_pe --trim_poly_g --cut_front --cut_tail --cut_window_size 4 --cut_mean_quality 20 --length_required 50 --n_base_limit 5 --dont_eval_duplication'
-params.task_memory          = '12 GB'   // informational for the local executor (Cleanifier filter index ~7 GB + buffers)
-params.max_retries          = 1         // a failing run is retried once, then ignored (workflow keeps going)
-params.skip_done            = true      // runs with an existing <run>.done are not re-processed
-params.fifo_dir             = '/tmp'    // where the two named pipes are created (node-local; falls back to the task dir)
-params.scripts_dir          = "${projectDir}/../scripts/rawreadqc"
-params.bases_tolerance      = 0.05      // with a base_count column: fail a run whose raw bases are below (1 - tolerance) x base_count
-params.help                 = false
+params {
+    samplesheet          = ''        // required
+    outdir               = "${launchDir}/results/metagenome/RAWREAD_QC"
+    cleanifier_index     = ''        // required: prefix of <index>.filter + <index>.info (e.g. ~/metaCRC/db/cleanifier/human)
+    cleanifier_shared    = false     // load the index once per node into /dev/shm (cleanifier load / --shared)
+    cleanifier_sensitive = false     // --sensitive: query every k-mer instead of sampling (slower)
+    cleanifier_threshold = 0.5       // fraction of read bases covered by indexed k-mers -> read pair removed
+    cpus                 = 4         // Nextflow cpus per task (slot accounting on the node)
+    fastp_threads        = 2         // fastp -w (worker threads; fastp adds its own reader/writer threads)
+    cleanifier_threads   = 3         // cleanifier --threads (= 1 reader + 1 writer + N-2 classifier threads)
+    gz_threads           = 1         // cleanifier --compression-threads -> bgzip -@ per output file (2 files)
+    gz_level             = 4         // cleanifier --compression-level -> bgzip -l (1 fastest .. 9)
+    fastp_args           = '--detect_adapter_for_pe --trim_poly_g --cut_front --cut_tail --cut_window_size 4 --cut_mean_quality 20 --length_required 50 --n_base_limit 5 --dont_eval_duplication'
+    task_memory          = '12 GB'   // informational for the local executor (Cleanifier filter index ~7 GB + buffers)
+    max_retries          = 1         // a failing run is retried once, then ignored (workflow keeps going)
+    skip_done            = true      // runs with an existing <run>.done are not re-processed
+    bases_tolerance      = 0.05      // with a base_count column: fail a run whose raw bases are below (1 - tolerance) x base_count
+    fifo_dir             = '/tmp'    // where the named pipes are created (node-local; falls back to the task dir)
+    relay_buffer         = '64M'     // mbuffer RAM per mate between fastp and cleanifier (must exceed fastp's 4 MB output buffer)
+    scripts_dir          = "${projectDir}/../scripts/rawreadqc"
+    help                 = false
+}
 
 def helpMessage() {
-    log.info """
+    return """
     RAWREAD_QC_cleanifier  (fastp -> Cleanifier human-read removal)
 
-    nextflow run RAWREAD_QC_cleanifier.nf -profile kbds \\
+    nextflow run RAWREAD_QC_cleanifier.nf -c config/kbds.config -profile kbds \\
         --samplesheet samplesheet.csv --outdir ~/metaCRC/qc \\
         --cleanifier_index ~/metaCRC/db/cleanifier/<index-prefix> [-resume]
 
@@ -71,50 +75,19 @@ def helpMessage() {
     fastp
       --fastp_args "${params.fastp_args}"
     Other
-      --skip_done ${params.skip_done}  --max_retries ${params.max_retries}  --fifo_dir ${params.fifo_dir}  --task_memory '${params.task_memory}'
+      --skip_done ${params.skip_done}  --max_retries ${params.max_retries}  --bases_tolerance ${params.bases_tolerance}  --fifo_dir ${params.fifo_dir}  --relay_buffer ${params.relay_buffer}  --task_memory '${params.task_memory}'
     """.stripIndent()
 }
 
-if (params.help) {
-    helpMessage()
-    exit 0
+// absolute, normalised path as a string (Cleanifier strips leading '.' characters from its
+// output prefix, so a relative prefix such as ./x would be written to /x)
+def absPath(p) {
+    return file(p.toString()).toAbsolutePath().normalize().toString()
 }
 
-// ---------------------------------------------------------------------------
-// Validation
-// ---------------------------------------------------------------------------
-if (!params.samplesheet)      error "Missing --samplesheet (CSV with run_accession,sample_accession,cohort_accession,fastq_1,fastq_2)"
-if (!params.cleanifier_index) error "Missing --cleanifier_index (prefix of <index>.filter / <index>.info)"
-
-// Absolute paths matter: Cleanifier strips leading '.' characters from its output prefix,
-// so a relative prefix such as ./x would be written to /x.
-// (script-level bindings, no `def`, so that the workflow block and onComplete can see them)
-outdir_abs = file(params.outdir).toAbsolutePath().normalize().toString()
-index_abs  = file(params.cleanifier_index.toString().replaceAll(/\.(filter|info)$/, '')).toAbsolutePath().normalize().toString()
-if (!file("${index_abs}.filter").exists() && !file("${index_abs}.hash").exists())
-    error "Cleanifier index not found: ${index_abs}.filter (or .hash)"
-if (!file("${index_abs}.info").exists())
-    error "Cleanifier index info not found: ${index_abs}.info"
-
-REQUIRED_COLS = ['run_accession', 'sample_accession', 'cohort_accession', 'fastq_1', 'fastq_2']
-
-log.info """
-=============================================================
-  RAWREAD_QC_cleanifier   fastp -> Cleanifier (human removal)
-=============================================================
-samplesheet       : ${params.samplesheet}
-outdir            : ${outdir_abs}
-cleanifier index  : ${index_abs}  (shared memory: ${params.cleanifier_shared}, sensitive: ${params.cleanifier_sensitive}, threshold: ${params.cleanifier_threshold})
-threads per task  : cpus=${params.cpus}  fastp=${params.fastp_threads}  cleanifier=${params.cleanifier_threads}  bgzip=${params.gz_threads}x2 (level ${params.gz_level})
-fastp args        : ${params.fastp_args}
-retries / skip    : max_retries=${params.max_retries}  skip_done=${params.skip_done}
-workDir           : ${workflow.workDir}
-=============================================================
-""".stripIndent()
-
-// ---------------------------------------------------------------------------
-// Processes
-// ---------------------------------------------------------------------------
+def indexPrefix() {
+    return absPath(params.cleanifier_index.toString().replaceAll(/\.(filter|info|hash)$/, ''))
+}
 
 /*
  * Load the Cleanifier index into POSIX shared memory once per node
@@ -122,7 +95,7 @@ workDir           : ${workflow.workDir}
  * instead of each reading ~7 GB from the parallel file system.
  * `cleanifier load` (without --keep-running) returns once the object is filled; the
  * object outlives the loader. A small detached guard process removes it when the
- * batch job ends (SIGTERM from Slurm) and workflow.onComplete removes it as well.
+ * batch job ends (SIGTERM from Slurm) and the workflow onComplete handler removes it as well.
  * (cleanifier 1.3.2's own --keep-running mode does not survive SIGTERM: it calls
  * sigwait() without blocking the signal first, so the default action kills it.)
  * `cache false`: must run on every (re)start, because the node changes.
@@ -131,7 +104,7 @@ process load_index {
     tag "${index_prefix.tokenize('/')[-1]}"
     cache false
     cpus 1
-    memory params.task_memory
+    memory { params.task_memory }
     errorStrategy 'terminate'
 
     input:
@@ -173,7 +146,7 @@ process load_index {
 }
 
 /*
- * One run (one FASTQ pair): fastp -> two named pipes -> cleanifier filter -> bgzip.
+ * One run (one FASTQ pair): fastp -> named pipes -> mbuffer relays -> named pipes -> cleanifier filter -> bgzip.
  * Everything that must be visible to the outside world is written by the task
  * itself, in this order:
  *   1. logs + per-run TSV copied to <dest>/qc_logs/
@@ -183,9 +156,9 @@ process load_index {
  */
 process fastp_cleanifier {
     tag "${meta.run}"
-    cpus params.cpus
-    memory params.task_memory
-    maxRetries params.max_retries
+    cpus { params.cpus }
+    memory { params.task_memory }
+    maxRetries { params.max_retries }
     errorStrategy { task.attempt <= params.max_retries ? 'retry' : 'ignore' }
 
     input:
@@ -211,30 +184,43 @@ process fastp_cleanifier {
     tmp1="\${part}_1_keep.fastq.gz"
     tmp2="\${part}_2_keep.fastq.gz"
     fifo_dir=\$(mktemp -d -p '${params.fifo_dir}' "qc_${run}.XXXXXX" 2>/dev/null || mktemp -d "qc_${run}.XXXXXX")
-    fifo1="\$fifo_dir/${run}_1.fastq"      # extension must be .fastq (uncompressed) for Cleanifier
+    raw1="\$fifo_dir/${run}_1.raw"          # fastp -> mbuffer (no .gz suffix: fastp writes plain text)
+    raw2="\$fifo_dir/${run}_2.raw"
+    fifo1="\$fifo_dir/${run}_1.fastq"        # mbuffer -> cleanifier (extension must be .fastq = uncompressed for Cleanifier)
     fifo2="\$fifo_dir/${run}_2.fastq"
     cleanup() {
         rc=\$?
         if [ "\$rc" -ne 0 ]; then
-            for p in .fastp.pid .cleanifier.pid; do [ -s \$p ] && kill "\$(cat \$p)" 2>/dev/null || true; done
+            for p in .fastp.pid .cleanifier.pid .mbuf1.pid .mbuf2.pid; do [ -s \$p ] && kill "\$(cat \$p)" 2>/dev/null || true; done
             rm -f "\$tmp1" "\$tmp2"
         fi
-        rm -rf "\$fifo_dir" .fastp.pid .cleanifier.pid .fastp.rc .cleanifier.rc
+        rm -rf "\$fifo_dir" .fastp.pid .cleanifier.pid .mbuf1.pid .mbuf2.pid .fastp.rc .cleanifier.rc .mbuf1.rc .mbuf2.rc
     }
     trap cleanup EXIT
 
     mkdir -p "\$dest/qc_logs"
-    rm -f "\$tmp1" "\$tmp2" .fastp.pid .cleanifier.pid .fastp.rc .cleanifier.rc
-    mkfifo "\$fifo1" "\$fifo2"
+    rm -f "\$tmp1" "\$tmp2" .fastp.pid .cleanifier.pid .mbuf1.pid .mbuf2.pid .fastp.rc .cleanifier.rc .mbuf1.rc .mbuf2.rc
+    mkfifo "\$raw1" "\$raw2" "\$fifo1" "\$fifo2"
     t0=\$(date +%s)
 
-    # fastp writes uncompressed, trimmed reads into the two pipes (out1 is opened before out2,
-    # matching the order in which Cleanifier opens --fastq then --pairs, so neither side can deadlock).
+    # fastp -> [raw FIFO] -> mbuffer (${params.relay_buffer} RAM) -> [FIFO] -> cleanifier, one relay per mate.
+    # The relays decouple the two streams: Cleanifier's reader fills ~50 kB from mate 1, then ~50 kB from
+    # mate 2, whereas fastp (>= 0.23) buffers 4 MB per output and flushes mate 1 completely before mate 2
+    # when it finishes -- without the relays the two block each other on a 64 kB kernel pipe (verified
+    # deadlock with fastp 1.4). mbuffer absorbs the 4 MB flush, so any open/write order works.
     # Each tool runs in a subshell that records its PID and exit status in a file, so the task can react
-    # as soon as either one fails (bash 4.2 on CentOS 7 has no `wait -n`); a failed partner left blocked
-    # on a pipe open() is killed instead of hanging the task.
+    # as soon as one of them fails (bash 4.2 on CentOS 7 has no `wait -n`); partners left blocked on a
+    # pipe are killed instead of hanging the task.
     (
-        fastp --in1 ${fq1} --in2 ${fq2} --out1 "\$fifo1" --out2 "\$fifo2" \\
+        mbuffer -q -f -m ${params.relay_buffer} -s 1M -i "\$raw1" -o "\$fifo1" 2> .mbuf1.log &
+        echo \$! > .mbuf1.pid; wait \$! && echo 0 > .mbuf1.rc || echo \$? > .mbuf1.rc
+    ) &
+    (
+        mbuffer -q -f -m ${params.relay_buffer} -s 1M -i "\$raw2" -o "\$fifo2" 2> .mbuf2.log &
+        echo \$! > .mbuf2.pid; wait \$! && echo 0 > .mbuf2.rc || echo \$? > .mbuf2.rc
+    ) &
+    (
+        fastp --in1 ${fq1} --in2 ${fq2} --out1 "\$raw1" --out2 "\$raw2" \\
             --thread ${params.fastp_threads} ${params.fastp_args} \\
             --json ${run}.fastp.json --html ${run}.fastp.html --report_title '${run}' \\
             2> ${run}.fastp.log &
@@ -248,14 +234,20 @@ process fastp_cleanifier {
             > ${run}.cleanifier.log 2>&1 &
         echo \$! > .cleanifier.pid; wait \$! && echo 0 > .cleanifier.rc || echo \$? > .cleanifier.rc
     ) &
-    while [ ! -s .fastp.rc ] || [ ! -s .cleanifier.rc ]; do
-        if [ -s .fastp.rc ] && [ "\$(cat .fastp.rc)" != 0 ]; then break; fi
-        if [ -s .cleanifier.rc ] && [ "\$(cat .cleanifier.rc)" != 0 ]; then break; fi
+    failed=""
+    while [ ! -s .fastp.rc ] || [ ! -s .cleanifier.rc ] || [ ! -s .mbuf1.rc ] || [ ! -s .mbuf2.rc ]; do
+        for t in fastp cleanifier mbuf1 mbuf2; do
+            if [ -s .\$t.rc ] && [ "\$(cat .\$t.rc)" != 0 ]; then failed="\$failed \$t=\$(cat .\$t.rc)"; fi
+        done
+        [ -n "\$failed" ] && break
         sleep 1
     done
-    rc_fastp=\$(cat .fastp.rc 2>/dev/null || echo running); rc_cl=\$(cat .cleanifier.rc 2>/dev/null || echo running)
-    if [ "\$rc_fastp" != 0 ] || [ "\$rc_cl" != 0 ]; then
-        echo "ERROR: fastp exit=\$rc_fastp, cleanifier exit=\$rc_cl (see ${run}.fastp.log / ${run}.cleanifier.log)" >&2
+    for t in fastp cleanifier mbuf1 mbuf2; do
+        if [ -s .\$t.rc ] && [ "\$(cat .\$t.rc)" != 0 ]; then case "\$failed" in *"\$t="*) ;; *) failed="\$failed \$t=\$(cat .\$t.rc)";; esac; fi
+    done
+    if [ -n "\$failed" ]; then
+        echo "ERROR: tool failure:\$failed (see ${run}.fastp.log / ${run}.cleanifier.log; mbuffer: .mbuf*.log)" >&2
+        cat .mbuf1.log .mbuf2.log 2>/dev/null >&2 || true
         exit 1
     fi
     wait
@@ -309,12 +301,41 @@ process qc_summary {
 // Workflow
 // ---------------------------------------------------------------------------
 workflow {
+    main:
+    if (params.help) {
+        log.info helpMessage()
+        exit 0
+    }
+    if (!params.samplesheet)      error "Missing --samplesheet (CSV with run_accession,sample_accession,cohort_accession,fastq_1,fastq_2)"
+    if (!params.cleanifier_index) error "Missing --cleanifier_index (prefix of <index>.filter / <index>.info)"
+
+    def outdir_abs = absPath(params.outdir)
+    def index_abs  = indexPrefix()
+    if (!file("${index_abs}.filter").exists() && !file("${index_abs}.hash").exists())
+        error "Cleanifier index not found: ${index_abs}.filter (or .hash)"
+    if (!file("${index_abs}.info").exists())
+        error "Cleanifier index info not found: ${index_abs}.info"
+    def required_cols = ['run_accession', 'sample_accession', 'cohort_accession', 'fastq_1', 'fastq_2']
+
+    log.info """
+    =============================================================
+      RAWREAD_QC_cleanifier   fastp -> Cleanifier (human removal)
+    =============================================================
+    samplesheet       : ${params.samplesheet}
+    outdir            : ${outdir_abs}
+    cleanifier index  : ${index_abs}  (shared memory: ${params.cleanifier_shared}, sensitive: ${params.cleanifier_sensitive}, threshold: ${params.cleanifier_threshold})
+    threads per task  : cpus=${params.cpus}  fastp=${params.fastp_threads}  cleanifier=${params.cleanifier_threads}  bgzip=${params.gz_threads}x2 (level ${params.gz_level})
+    fastp args        : ${params.fastp_args}
+    retries / skip    : max_retries=${params.max_retries}  skip_done=${params.skip_done}
+    workDir           : ${workflow.workDir}
+    =============================================================
+    """.stripIndent()
 
     runs_ch = Channel.fromPath(params.samplesheet, checkIfExists: true)
         .splitCsv(header: true, sep: ',', strip: true)
         .map { row ->
-            def missing = REQUIRED_COLS.findAll { !row.containsKey(it) }
-            if (missing) error "Samplesheet ${params.samplesheet} lacks column(s): ${missing.join(', ')} (required: ${REQUIRED_COLS.join(',')})"
+            def missing = required_cols.findAll { !row.containsKey(it) }
+            if (missing) error "Samplesheet ${params.samplesheet} lacks column(s): ${missing.join(', ')} (required: ${required_cols.join(',')})"
             if (!row.run_accession || !row.cohort_accession) error "Samplesheet row without run_accession/cohort_accession: ${row}"
             def meta = [
                 run    : row.run_accession,
@@ -348,17 +369,18 @@ workflow {
     cohorts_ch = runs_ch.map { meta, fq1, fq2 -> tuple(meta.cohort, meta.dest) }.unique()
     tsv_list   = fastp_cleanifier.out.tsv.map { meta, tsv -> tsv }.collect().ifEmpty([]).map { [it] }
     qc_summary(cohorts_ch.combine(tsv_list))
-}
 
-workflow.onComplete {
-    if (params.cleanifier_shared) {
-        // remove the shared-memory index: ask the guard (SIGTERM -> cleanifier remove), then check ourselves
-        def name = index_abs.tokenize('/')[-1]
+    onComplete:
+    if (params.cleanifier_shared && params.cleanifier_index) {
+        // remove the shared-memory index: ask the guard (SIGTERM -> cleanifier remove), then check ourselves.
+        // The sbatch wrapper should also run `cleanifier remove --name <index>` after nextflow exits.
+        def idx  = indexPrefix()
+        def name = idx.tokenize('/')[-1]
         def pidfile = "${launchDir}/.cleanifier_shm_guard.pid"
         def cmd = """
             if [ -s '${pidfile}' ]; then kill -TERM "\$(cat '${pidfile}')" 2>/dev/null || true; fi
             for i in 1 2 3 4 5; do [ -e /dev/shm/${name} ] || break; sleep 1; done
-            [ -e /dev/shm/${name} ] && cleanifier remove --name '${index_abs}' || true
+            [ -e /dev/shm/${name} ] && cleanifier remove --name '${idx}' || true
             rm -f '${pidfile}'
         """
         try { ["bash", "-c", cmd].execute().waitFor() } catch (Exception e) { log.warn "shared-memory cleanup: ${e.message}" }

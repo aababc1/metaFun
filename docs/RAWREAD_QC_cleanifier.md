@@ -9,17 +9,24 @@ A read pair is removed when either mate has ≥ `--threshold` (default 0.5) of i
 indexed k-mers; by default k-mers are *sampled* (every k/2 positions), `--cleanifier_sensitive`
 queries all of them.
 
+Requires Nextflow >= 26 (the script and `config/kbds.config` use the strict syntax, including the
+`onComplete:` workflow section); verified with Nextflow 26.10.3, fastp 1.4.0, Cleanifier 1.3.2,
+htslib 1.24, mbuffer 20160228 (the `scripts/rawreadqc/kbds_env.yml` environment).
+
 ## Pipeline per run
 
 ```
-<run>_1.fastq.gz ─┐                 ┌─ /tmp/qc_<run>.XXXX/<run>_1.fastq (named pipe) ─┐
-                  ├─ fastp ─────────┤                                                 ├─ cleanifier filter ─ bgzip ─► <dest>/.<run>.part_{1,2}_keep.fastq.gz
-<run>_2.fastq.gz ─┘  (-w 2)        └─ /tmp/qc_<run>.XXXX/<run>_2.fastq (named pipe) ─┘   (--threads 3, 1 classifier)   (-@ 1 -l 4, one per file)
+<run>_1.fastq.gz ─┐            ┌─ <run>_1.raw (FIFO) ─ mbuffer 64M ─ <run>_1.fastq (FIFO) ─┐
+                  ├─ fastp ────┤                                                           ├─ cleanifier filter ─ bgzip ─► <dest>/.<run>.part_{1,2}_keep.fastq.gz
+<run>_2.fastq.gz ─┘  (-w 2)   └─ <run>_2.raw (FIFO) ─ mbuffer 64M ─ <run>_2.fastq (FIFO) ─┘   (--threads 3, 1 classifier)   (-@ 1 -l 4, one per file)
 ```
 
-The trimmed reads never touch the disk between the two tools (no gzip round trip; fastp opens
-out1 before out2 and Cleanifier opens `--fastq` before `--pairs`, so the pipe opens cannot
-deadlock). Then, inside the same task and in this order:
+The trimmed reads never touch the disk between the two tools (no gzip round trip). The two
+`mbuffer` relays (RAM buffers, 64 MB each, `--relay_buffer`) are required: Cleanifier's reader
+alternates between the mates in ~50 kB quanta, while fastp >= 0.23 buffers 4 MB per output and
+flushes mate 1 completely before mate 2 when it finishes — connected directly through 64 kB
+kernel pipes the two block each other (reproducible deadlock with fastp 1.4.0; fastp 0.22 wrote
+both mates incrementally and did not need the relays). Then, inside the same task and in this order:
 
 1. `run_summary.py` writes `<run>.qc.tsv` and checks: fastp pairs after filtering == Cleanifier
    `keep + filter`; both outputs end with the BGZF EOF block; with a `base_count` column, raw bases
@@ -63,12 +70,14 @@ CSV with header `run_accession,sample_accession,cohort_accession,fastq_1,fastq_2
 | `--dont_eval_duplication` | duplication estimate costs time/memory and is not used downstream |
 | (not set) `--dedup`, `--correction`, `--low_complexity_filter` | not standard for metagenome assembly; dedup would remove real high-abundance reads |
 
-## K-BDS profile (`-profile kbds`)
+## K-BDS profile (`-c config/kbds.config -profile kbds`)
 
-One `sbatch` = one exclusive node = one `nextflow run`, local executor, `executor.cpus = nproc`,
-`process.cpus = 4` (8 concurrent runs on cpu32-only, 16 on cpu64). No containers; tools come from the
-conda environment `scripts/rawreadqc/kbds_env.yml` (activate it before `nextflow run`, or pass
-`--conda_env <path>` so every task activates it). Fixed in the profile:
+`config/kbds.config` is a standalone, strict-syntax config (the shared `config/nextflow.config` is
+legacy syntax and does not parse under Nextflow >= 26; it is untouched). One `sbatch` = one exclusive
+node = one `nextflow run`, local executor whose capacity defaults to nproc, `process.cpus = 4`
+(8 concurrent runs on cpu32-only, 16 on cpu64). No containers; tools come from the conda environment
+`scripts/rawreadqc/kbds_env.yml` (activate it before `nextflow run`, or pass `--conda_env <name>` so
+every task activates it). Fixed in the profile:
 
 ```
 trace  { enabled = true; overwrite = true; raw = true; file = "${params.run_dir}/trace.txt"
@@ -85,7 +94,7 @@ removes the object when the job ends (SIGTERM) and `workflow.onComplete` removes
 
 ```
 cd ~/metaCRC/runs/qc/<BioProject>[.<k>]
-nextflow run ~/metaFun/nf_scripts/RAWREAD_QC_cleanifier.nf -c ~/metaFun/config/nextflow.config -profile kbds \
+nextflow run ~/metaFun/nf_scripts/RAWREAD_QC_cleanifier.nf -c ~/metaFun/config/kbds.config -profile kbds \
     --samplesheet $PWD/samplesheet.csv --outdir ~/metaCRC/qc \
     --run_dir $PWD --work_dir ~/metaCRC/work/qc/<BioProject>[.<k>] \
     --cleanifier_index ~/metaCRC/db/cleanifier/<prefix> -resume
@@ -94,9 +103,20 @@ nextflow run ~/metaFun/nf_scripts/RAWREAD_QC_cleanifier.nf -c ~/metaFun/config/n
 Process names in `trace.txt`: `load_index` (once per run, only with shared memory), `fastp_cleanifier`
 (one per run, `tag` = run accession), `qc_summary` (one per cohort).
 
+## Checking the dumped FASTQ first
+
+`scripts/rawreadqc/check_fastq_integrity.sh <cohort|all>` (run it on a compute node, e.g.
+`sbatch -p cpu32-only -N 1 --exclusive -t 4:00:00 --wrap "bash .../check_fastq_integrity.sh PRJNA531273"`)
+decompresses every pair once and reports per run: gzip stream complete (a job killed during
+compression leaves a truncated file), record count a multiple of 4, `_1`/`_2` in sync, and
+pairs ≈ manifest `base_count / (len1 + len2)` (≥ 97 %). It writes `<cohort>.fastq_check.tsv` and
+`<cohort>.bad_runs.txt` under `~/metaCRC/manifest/fastq_check/`; pass the latter to
+`make_samplesheet.py --exclude`. Inside the pipeline, fastp 1.4 itself fails on a truncated gzip
+stream and `run_summary.py` additionally compares raw bases with the manifest (95 %).
+
 ## Fallbacks if Cleanifier does not run on glibc 2.17
 
-Cleanifier is pure Python ≥ 3.12 + numba (+ `bgzip` from htslib); conda-forge builds of python,
+(Not needed on K-BDS: verified 2026-10-26 — glibc 2.17, Python 3.15.2, numba 0.68 JIT OK.) Cleanifier is pure Python ≥ 3.12 + numba (+ `bgzip` from htslib); conda-forge builds of python,
 numba and llvmlite target glibc ≥ 2.17, so a solver error mentioning `__glibc >=2.28` would point at
 a single package that can be pinned to an older build. If it still fails: (a) **Deacon**
 (Rust single binary, minimizer-based, also no alignment) with the same pipe layout (`deacon filter`
@@ -113,3 +133,9 @@ conda env if `apptainer` exists on compute nodes; (c) last resort, the Bowtie2 p
 - `NUMBA_CACHE_DIR` is set in the profile but Cleanifier 1.3.2 does not use numba's on-disk cache
   (`cache=True` is never passed), so each invocation pays the JIT compilation (≈ 5–15 s).
 - `report.html` is overwritten on `-resume`; `trace.txt` too (`overwrite = true`), with CACHED rows.
+- Under the strict parser, process directives that read `params` must be closures
+  (`memory { params.task_memory }`); a plain `memory params.task_memory` evaluated to null
+  (silently no memory reservation) and logged "Access to undefined parameter".
+- The shared-memory object `/dev/shm/<index>` is removed by the workflow's `onComplete`, by the
+  guard process on SIGTERM, and (belt and braces) by the sbatch wrapper after `nextflow` exits:
+  `cleanifier remove --name <index prefix>`.
