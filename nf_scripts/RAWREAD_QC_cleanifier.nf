@@ -45,7 +45,6 @@ params {
     gz_threads           = 1         // cleanifier --compression-threads -> bgzip -@ per output file (2 files)
     gz_level             = 4         // cleanifier --compression-level -> bgzip -l (1 fastest .. 9)
     fastp_args           = '--detect_adapter_for_pe --trim_poly_g --cut_front --cut_tail --cut_window_size 4 --cut_mean_quality 20 --length_required 50 --n_base_limit 5 --dont_eval_duplication'
-    task_memory          = '12 GB'   // informational for the local executor (Cleanifier filter index ~7 GB + buffers)
     max_retries          = 1         // a failing run is retried once, then ignored (workflow keeps going)
     skip_done            = true      // runs with an existing <run>.done are not re-processed
     bases_tolerance      = 0.05      // with a base_count column: fail a run whose raw bases are below (1 - tolerance) x base_count
@@ -75,7 +74,7 @@ def helpMessage() {
     fastp
       --fastp_args "${params.fastp_args}"
     Other
-      --skip_done ${params.skip_done}  --max_retries ${params.max_retries}  --bases_tolerance ${params.bases_tolerance}  --fifo_dir ${params.fifo_dir}  --relay_buffer ${params.relay_buffer}  --task_memory '${params.task_memory}'
+      --skip_done ${params.skip_done}  --max_retries ${params.max_retries}  --bases_tolerance ${params.bases_tolerance}  --fifo_dir ${params.fifo_dir}  --relay_buffer ${params.relay_buffer}
     """.stripIndent()
 }
 
@@ -104,7 +103,6 @@ process load_index {
     tag "${index_prefix.tokenize('/')[-1]}"
     cache false
     cpus 1
-    memory { params.task_memory }
     errorStrategy 'terminate'
 
     input:
@@ -157,7 +155,6 @@ process load_index {
 process fastp_cleanifier {
     tag "${meta.run}"
     cpus { params.cpus }
-    memory { params.task_memory }
     maxRetries { params.max_retries }
     errorStrategy { task.attempt <= params.max_retries ? 'retry' : 'ignore' }
 
@@ -279,7 +276,6 @@ process fastp_cleanifier {
 process qc_summary {
     tag "${cohort}"
     cpus 1
-    memory '1 GB'
     errorStrategy 'ignore'
 
     input:

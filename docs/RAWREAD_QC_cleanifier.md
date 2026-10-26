@@ -134,8 +134,10 @@ conda env if `apptainer` exists on compute nodes; (c) last resort, the Bowtie2 p
   (`cache=True` is never passed), so each invocation pays the JIT compilation (≈ 5–15 s).
 - `report.html` is overwritten on `-resume`; `trace.txt` too (`overwrite = true`), with CACHED rows.
 - Under the strict parser, process directives that read `params` must be closures
-  (`memory { params.task_memory }`); a plain `memory params.task_memory` evaluated to null
-  (silently no memory reservation) and logged "Access to undefined parameter".
+  (`cpus { params.cpus }`); a plain `cpus params.cpus` evaluated to null and logged
+  "Access to undefined parameter". No `memory` directive is set: with the shared-memory index a
+  task's private RSS is small (fastp buffers + mbuffer 2 x 64 MB) and the local executor would only
+  use it as a scheduling constraint.
 - The shared-memory object `/dev/shm/<index>` is removed by the workflow's `onComplete`, by the
   guard process on SIGTERM, and (belt and braces) by the sbatch wrapper after `nextflow` exits:
   `cleanifier remove --name <index prefix>`.
