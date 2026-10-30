@@ -3,7 +3,8 @@
 #
 # Idempotent: run it as often as you like (e.g. once an hour from tmux). Each pass:
 #   1. reads the manifest (PAIRED runs per cohort, bases per cohort)
-#   2. skips cohorts that are finished (every run has qc/<cohort>/<run>.done)
+#   2. skips cohorts that are finished (every run has qc/<cohort>/<run>.done) or that have nothing new to do
+#      (every dumped run already has its .done; the rest is not dumped yet)
 #   3. skips cohorts that already have a QC job pending/running (squeue name qc_<cohort>)
 #   4. skips cohorts whose dump is incomplete (fewer FASTQ pairs than PAIRED runs), unless ALLOW_PARTIAL=1
 #      (the pipeline's skip_done + -resume make a later re-submission pick up the stragglers)
@@ -14,8 +15,9 @@
 #      one job each (-J qc_<cohort>.<k>), all writing into qc/<cohort>/
 # Dry run by default: prints what it would do. SUBMIT=1 actually submits.
 #
-# Usage:  bash kbds_submit_all.sh              # dry run
-#         SUBMIT=1 bash kbds_submit_all.sh     # submit
+# Usage:  ~/metaFun/scripts/rawreadqc/kbds_submit_all.sh                        # dry run
+#         ALLOW_PARTIAL=1 SUBMIT=1 ~/metaFun/scripts/rawreadqc/kbds_submit_all.sh  # submit
+# (run it directly, not via `bash file`: on K-BDS `bash` is a login-shell function in the user's rc)
 # Environment overrides: MANIFEST FASTQ_DIR QC_ROOT RUNS_DIR INDEX METAFUN ALLOW_PARTIAL=1 MAX_SUBMIT=n
 #                        PARTITIONS="cpu32-only:5 cpu64-only:5" ONLY="PRJEB6070 PRJNA447983" EXTRA_SBATCH="-A acct"
 set -uo pipefail
@@ -65,25 +67,27 @@ free_partition() {
     return 1
 }
 
-printf "%-14s %6s %6s %6s %8s %-9s %s\n" cohort runs dumped done Tb action detail
+printf "%-14s %6s %6s %6s %6s %8s %-9s %s\n" cohort runs dumped done todo Tb action detail
 n_sub=0
 while read -r coh nruns bases; do
     [ -n "$coh" ] || continue
     if [ -n "$ONLY" ]; then case " $ONLY " in *" $coh "*) ;; *) continue;; esac; fi
     tb=$(awk -v b="$bases" 'BEGIN{printf "%.2f", b/1e12}')
     runs=$(awk -F'\t' -v c="$c_coh" -v l="$c_lay" -v r="$c_run" -v coh="$coh" 'NR>1 && $c==coh && toupper($l)=="PAIRED"{print $r}' "$MANIFEST")
-    dumped=0; done_n=0
+    dumped=0; done_n=0; todo=0
     for r in $runs; do
-        [ -s "$FASTQ_DIR/$coh/${r}_1.fastq.gz" ] && [ -s "$FASTQ_DIR/$coh/${r}_2.fastq.gz" ] && dumped=$((dumped+1))
-        [ -e "$QC_ROOT/$coh/$r.done" ] && done_n=$((done_n+1))
+        d=0; [ -s "$FASTQ_DIR/$coh/${r}_1.fastq.gz" ] && [ -s "$FASTQ_DIR/$coh/${r}_2.fastq.gz" ] && { dumped=$((dumped+1)); d=1; }
+        if [ -e "$QC_ROOT/$coh/$r.done" ]; then done_n=$((done_n+1)); elif [ "$d" = 1 ]; then todo=$((todo+1)); fi
     done
     act=""; detail=""
     if [ "$done_n" -ge "$nruns" ]; then
         act=finished
-    elif [ -n "${running[name:qc_$coh]:-}" ]; then
+    elif [ -n "${running[name:qc_$coh]:-}" ] || [ -n "${running[name:qc_$coh.1]:-}" ]; then
         act=queued; detail="qc_$coh already pending/running"
     elif [ "$dumped" -eq 0 ]; then
         act=wait; detail="no FASTQ yet"
+    elif [ "$todo" -eq 0 ]; then
+        act=wait; detail="every dumped run is done; $((nruns-dumped)) run(s) not dumped yet"
     elif [ "$dumped" -lt "$nruns" ] && [ "$ALLOW_PARTIAL" != 1 ]; then
         act=wait; detail="dump $dumped/$nruns (ALLOW_PARTIAL=1 to submit now)"
     elif [ "$n_sub" -ge "$MAX_SUBMIT" ]; then
@@ -128,6 +132,6 @@ while read -r coh nruns bases; do
             act=$([ "$SUBMIT" = 1 ] && echo submitted || echo would-run); detail="est ${est_h}h, ${nchunk} job(s):$parts"
         fi
     fi
-    printf "%-14s %6d %6d %6d %8s %-9s %s\n" "$coh" "$nruns" "$dumped" "$done_n" "$tb" "$act" "$detail"
+    printf "%-14s %6d %6d %6d %6d %8s %-9s %s\n" "$coh" "$nruns" "$dumped" "$done_n" "$todo" "$tb" "$act" "$detail"
 done < <(awk -F'\t' -v c="$c_coh" -v l="$c_lay" -v b="$c_bas" 'NR>1 && toupper($l)=="PAIRED"{n[$c]++; s[$c]+=(b?$b:0)} END{for(k in n) print k, n[k], s[k]}' "$MANIFEST" | sort -k3 -n -r)
 echo "qc jobs now: $(for pc in $PARTITIONS; do p=${pc%%:*}; printf "%s=%s/%s " "$p" "${running[$p]:-0}" "${cap[$p]}"; done)"
