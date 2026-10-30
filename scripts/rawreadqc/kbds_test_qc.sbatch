@@ -12,6 +12,7 @@
 # HeadQuarters runbook. Submit from the run directory:
 #   cd ~/metaCRC/runs/qc/PRJNA531273 && sbatch ~/metaFun/scripts/rawreadqc/kbds_test_qc.sbatch
 # Override anything with environment variables, e.g.  COHORT=PRJNA531273 CPUS=4 sbatch ...
+# Extra workflow arguments: NF_EXTRA="--bases_tolerance 0.10" (sbatch exports the environment to the job)
 set -euo pipefail
 
 COHORT=${COHORT:-PRJNA531273}
@@ -27,6 +28,7 @@ if [ -z "${CONDA_SH:-}" ]; then
     done
 fi
 CPUS=${CPUS:-4}
+NF_EXTRA=${NF_EXTRA:-}                   # extra `nextflow run` arguments, e.g. NF_EXTRA="--bases_tolerance 0.10"
 
 source "$CONDA_SH"
 conda activate "$CONDA_ENV"
@@ -53,7 +55,7 @@ nextflow run "$METAFUN/nf_scripts/RAWREAD_QC_cleanifier.nf" -c "$METAFUN/config/
     --outdir "$QC_ROOT" \
     --run_dir "$RUN_DIR" --work_dir "$WORK_DIR" \
     --cleanifier_index "$INDEX" \
-    --cpus "$CPUS" \
+    --cpus "$CPUS" $NF_EXTRA \
     -resume && nf_rc=0 || nf_rc=$?
 
 # the workflow removes the shared-memory index itself; this is the safety net for an aborted run
